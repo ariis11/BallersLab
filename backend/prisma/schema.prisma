@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  isActive  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  profileCompleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions Session[]
+  profile  Profile?
+  createdTournaments Tournament[] @relation("TournamentCreator")
+  tournamentParticipants TournamentParticipant[]
+
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  username  String?  @unique
+  avatar    String?
+  dateOfBirth DateTime?
+  height    Float?
+  weight    Float?
+  country   String?
+  city      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Main Tournament model for 1x1 basketball tournaments
+model Tournament {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  locationName    String
+  latitude        Float
+  longitude       Float
+  startDate       DateTime
+  skillLevel      SkillLevel
+  maxPlayers      Int
+  currentPlayers  Int @default(0)
+  status          TournamentStatus @default(DRAFT)
+  isPublic        Boolean @default(true)
+  registrationDeadline DateTime?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  creator         User @relation("TournamentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  participants    TournamentParticipant[]
+
+  @@map("tournaments")
+}
+
+// Tournament Participants (players registered for tournaments)
+model TournamentParticipant {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String
+  status       ParticipantStatus @default(REGISTERED)
+  registeredAt DateTime @default(now())
+  checkedInAt  DateTime?
+  seed         Int?
+  finalRank    Int?
+  winnings     Float @default(0)
+
+  // Relations
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_participants")
+}
+
+// Enums
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PROFESSIONAL
+  ALL_LEVELS
+}
+
+enum TournamentStatus {
+  DRAFT
+  PUBLISHED
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  CHECKED_IN
+  ELIMINATED
+  WITHDRAWN
+  DISQUALIFIED
+  WINNER
+  RUNNER_UP
+  THIRD_PLACE
+} 
