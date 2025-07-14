@@ -4,9 +4,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ActiveFiltersRow from './ActiveFiltersRow';
-import FilterBottomSheet from './FilterBottomSheet';
-import TournamentCard from './TournamentCard';
+import ActiveFiltersRow from '../../../components/ActiveFiltersRow';
+import FilterBottomSheet from '../../../components/FilterBottomSheet';
+import TournamentCard from '../../../components/TournamentCard';
 
 // Extended filter state
 const initialFilters: {

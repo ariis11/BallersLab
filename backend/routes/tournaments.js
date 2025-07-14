@@ -575,10 +575,16 @@ router.post('/leave/:id', auth, async (req, res) => {
   }
 });
 
-// Get user's tournaments (created and joined) - MUST BE BEFORE /:id route!
+// GET /my-tournaments
+// type: 'created' (tournaments created by user)
+// type: 'joined' (tournaments user joined)
+// type: 'all' (created or joined)
+// type: 'upcoming' (joined and status REGISTRATION_OPEN)
+// type: 'active' (joined and status IN_PROGRESS)
+// type: 'finished' (joined and status COMPLETED)
 router.get('/my-tournaments', auth, async (req, res) => {
     try {
-      const { type = 'all' } = req.query; // 'created', 'joined', 'all'
+      const { type = 'all' } = req.query; // 'created', 'joined', 'all', 'upcoming', 'active', 'finished'
   
       let where = {};
   
@@ -589,6 +595,27 @@ router.get('/my-tournaments', auth, async (req, res) => {
           some: {
             userId: req.user.id
           }
+        };
+      } else if (type === 'upcoming') {
+        where = {
+          participants: {
+            some: { userId: req.user.id }
+          },
+          status: { in: ['REGISTRATION_OPEN', 'REGISTRATION_CLOSED'] }
+        };
+      } else if (type === 'active') {
+        where = {
+          participants: {
+            some: { userId: req.user.id }
+          },
+          status: 'IN_PROGRESS'
+        };
+      } else if (type === 'finished') {
+        where = {
+          participants: {
+            some: { userId: req.user.id }
+          },
+          status: 'COMPLETED'
         };
       } else {
         // 'all' - tournaments created or joined

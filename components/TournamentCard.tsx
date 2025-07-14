@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { formatTournamentDate } from '../../../../utils/dateUtils';
+import { formatTournamentDate } from '../utils/dateUtils';
 
 interface TournamentCardProps {
   item: any;

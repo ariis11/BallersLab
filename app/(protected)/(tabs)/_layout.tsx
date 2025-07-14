@@ -24,6 +24,21 @@ export default function BottomTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="my-tournaments"
+        options={{
+          title: "My Tournaments",
+          headerShown: false,
+          tabBarLabel: "My Tournaments",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="basketball"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="(home)"
         options={{
           title: "Home",
@@ -32,21 +47,6 @@ export default function BottomTabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="home"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="second"
-        options={{
-          title: "Second",
-          headerShown: false,
-          popToTopOnBlur: true,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="numeric-2-box-outline"
               size={size}
               color={color}
             />
