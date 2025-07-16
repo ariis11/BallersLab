@@ -9,6 +9,9 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('../routes/auth');
 const tournamentRoutes = require('../routes/tournaments');
 
+// Import services
+const schedulerService = require('../services/schedulerService');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -47,6 +50,20 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Simple admin endpoint for manual status updates
+app.post('/admin/tournaments/update-statuses', async (req, res) => {
+  try {
+    const result = await schedulerService.triggerManualUpdate();
+    res.json({ 
+      message: 'Manual status update triggered successfully',
+      result
+    });
+  } catch (error) {
+    console.error('Error triggering manual update:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tournaments', tournamentRoutes);
@@ -70,15 +87,20 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  
+  // Initialize simple tournament status scheduler
+  schedulerService.initialize();
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
+  schedulerService.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
+  schedulerService.stop();
   process.exit(0);
 }); 

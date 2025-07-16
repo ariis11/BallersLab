@@ -505,6 +505,19 @@ router.post('/join/:id', auth, async (req, res) => {
       }
     });
 
+    // IMMEDIATE STATUS CHECK: Check if tournament is now full
+    const updatedTournament = await prisma.tournament.findUnique({
+      where: { id }
+    });
+    
+    if (updatedTournament.currentPlayers >= updatedTournament.maxPlayers) {
+      await prisma.tournament.update({
+        where: { id },
+        data: { status: 'REGISTRATION_CLOSED' }
+      });
+      console.log(`🔄 Tournament ${id} registration closed (now full)`);
+    }
+
     res.json({
       message: 'Successfully joined tournament',
       participant
@@ -567,6 +580,21 @@ router.post('/leave/:id', auth, async (req, res) => {
         }
       }
     });
+
+    // Is not needed in current application logic because user cant leave tournament if REGISTRATION_CLOSED
+    // IMMEDIATE STATUS CHECK: Check if tournament is no longer full
+    // const updatedTournament = await prisma.tournament.findUnique({
+    //   where: { id }
+    // });
+    
+    // if (updatedTournament.status === 'REGISTRATION_CLOSED' && 
+    //     updatedTournament.currentPlayers < updatedTournament.maxPlayers) {
+    //   await prisma.tournament.update({
+    //     where: { id },
+    //     data: { status: 'REGISTRATION_OPEN' }
+    //   });
+    //   console.log(`🔄 Tournament ${id} registration reopened (no longer full)`);
+    // }
 
     res.json({ message: 'Successfully left tournament' });
   } catch (error) {
@@ -708,6 +736,116 @@ router.get('/participants/:tournamentId', async (req, res) => {
     res.json({ participants });
   } catch (error) {
     console.error('Get tournament participants error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Manual status update (admin/creator only)
+router.put('/update-status/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Check if tournament exists
+    const tournament = await prisma.tournament.findUnique({
+      where: { id }
+    });
+
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+
+    // Import the simple service
+    const tournamentStatusService = require('../services/tournamentStatusService');
+
+    // Perform the status update
+    await tournamentStatusService.manualStatusUpdate(id, status);
+
+    // Get updated tournament
+    const updatedTournament = await prisma.tournament.findUnique({
+      where: { id },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                username: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                profile: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    username: true,
+                    avatar: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    res.json({
+      message: 'Tournament status updated successfully',
+      tournament: updatedTournament
+    });
+  } catch (error) {
+    console.error('Manual status update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get tournament status history (for debugging)
+router.get('/status-history/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if tournament exists
+    const tournament = await prisma.tournament.findUnique({
+      where: { id }
+    });
+
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+
+    // Only creator can view status history
+    if (tournament.createdBy !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // For now, return current status and last update time
+    // In a real system, you might want to track status changes in a separate table
+    res.json({
+      currentStatus: tournament.status,
+      lastUpdated: tournament.updatedAt,
+      createdAt: tournament.createdAt,
+      startDate: tournament.startDate,
+      registrationDeadline: tournament.registrationDeadline
+    });
+  } catch (error) {
+    console.error('Get status history error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
