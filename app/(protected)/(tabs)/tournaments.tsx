@@ -62,7 +62,7 @@ export default function TournamentsScreen() {
   const fetchTournaments = async (filters = activeFilters) => {
     setLoading(true);
     try {
-      let url = 'http://localhost:3001/api/tournaments/list?';
+      let url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/list?`;
       const params: Record<string, string> = {};
       if (filters.status) params.status = filters.status;
       if (filters.skillLevel) params.skillLevel = filters.skillLevel;

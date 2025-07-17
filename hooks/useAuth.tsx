@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
         try {
-          const res = await fetch('http://localhost:3001/api/auth/me', {
+          const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async ({ email, password }: { email: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
-        await fetch('http://localhost:3001/api/auth/logout', {
+        await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async ({ email, password }: { email: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/auth/register', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshUser = async () => {
     const token = await AsyncStorage.getItem('authToken');
     if (token) {
-      const res = await fetch('http://localhost:3001/api/auth/me', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

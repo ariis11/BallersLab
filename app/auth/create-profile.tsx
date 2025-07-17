@@ -34,7 +34,7 @@ const ProfileCreationScreen = () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) throw new Error('No auth token found');
-      const res = await fetch('http://localhost:3001/api/auth/complete-profile', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/complete-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -20,9 +20,9 @@ const TournamentCard: React.FC<TournamentCardProps> = ({ item, index, user, refr
     if (!user) return;
     setLoading(true);
     try {
-      const endpoint = isParticipant
-        ? `http://localhost:3001/api/tournaments/leave/${item.id}`
-        : `http://localhost:3001/api/tournaments/join/${item.id}`;
+              const endpoint = isParticipant
+          ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/leave/${item.id}`
+          : `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/join/${item.id}`;
       const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
       const res = await fetch(endpoint, {
         method: 'POST',
