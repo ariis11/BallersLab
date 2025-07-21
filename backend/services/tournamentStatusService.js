@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bracketGenerationService = require('./bracketGenerationService');
 const prisma = new PrismaClient();
 
 class TournamentStatusService {
@@ -30,6 +31,17 @@ class TournamentStatusService {
           });
           
           console.log(`🔄 Tournament "${tournament.title}" status: ${tournament.status} → ${newStatus}`);
+          
+          // Generate bracket when tournament starts
+          if (newStatus === 'IN_PROGRESS' && !tournament.bracketGenerated) {
+            try {
+              await bracketGenerationService.generateBracket(tournament.id);
+              console.log(`🏆 Bracket generated for tournament "${tournament.title}"`);
+            } catch (error) {
+              console.error(`❌ Error generating bracket for tournament "${tournament.title}":`, error);
+            }
+          }
+          
           updated++;
         }
       }

@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 // Import routes
 const authRoutes = require('../routes/auth');
 const tournamentRoutes = require('../routes/tournaments');
+const bracketRoutes = require('../routes/brackets');
 
 // Import services
 const schedulerService = require('../services/schedulerService');
@@ -67,6 +68,7 @@ app.post('/admin/tournaments/update-statuses', async (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/brackets', bracketRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

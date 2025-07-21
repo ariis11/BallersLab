@@ -1,27 +1,46 @@
 import { useAuth } from '@/hooks/useAuth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TournamentCard from '../../../components/TournamentCard';
 
 // Active Tournament Card Component
-const ActiveTournamentCard = ({ tournament }: any) => (
-  <View style={styles.card}>
-    <View style={styles.iconCircle}>
-      <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
-    </View>
-    <View style={styles.infoBlockV2}>
-      <Text style={styles.title}>{tournament.title}</Text>
-      <View style={styles.rowBetween}>
-        <Text style={styles.round}>{`Current Round: ${tournament.currentRound}`}</Text>
-        <TouchableOpacity style={styles.viewBracketButtonV2} activeOpacity={0.8}>
-          <Text style={styles.viewBracketButtonTextV2}>View Bracket</Text>
-        </TouchableOpacity>
+const ActiveTournamentCard = ({ tournament }: any) => {
+  const router = useRouter();
+
+  const handleViewBracket = () => {
+    router.push({
+      pathname: '/bracket',
+      params: { 
+        tournamentId: tournament.id
+      }
+    });
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.iconCircle}>
+        <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
       </View>
-      <Text style={styles.nextMatchV2}>{`Next Match: ${tournament.nextMatch}`}</Text>
+      <View style={styles.infoBlockV2}>
+        <Text style={styles.title}>{tournament.title}</Text>
+        <View style={styles.rowBetween}>
+          <Text style={styles.round}>{`Current Round: ${tournament.currentRound}`}</Text>
+          <TouchableOpacity 
+            style={styles.viewBracketButtonV2} 
+            activeOpacity={0.8}
+            onPress={handleViewBracket}
+          >
+            <Text style={styles.viewBracketButtonTextV2}>View Bracket</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.nextMatchV2}>{`Next Match: ${tournament.nextMatch}`}</Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 // Placeholder TournamentCard for other categories - replace with your actual component or import
 const TournamentCardLegacy = ({ tournament, category }: any) => (
@@ -47,6 +66,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/my-tour
 
 const MyTournamentsScreen = () => {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('upcoming');
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,7 +113,7 @@ const MyTournamentsScreen = () => {
       : DUMMY_TOURNAMENTS[selectedCategory] || [];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Header */}
       <Text style={styles.header}>My Tournaments</Text>
 
@@ -147,8 +167,14 @@ const MyTournamentsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A1121', padding: 16 },
-  header: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  container: { flex: 1, backgroundColor: '#0A1121', paddingHorizontal: 16 },
+  header: { 
+    color: 'white', 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    textAlign: 'center',
+    marginBottom: 20 
+  },
   categoryRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
   categoryButton: {
     paddingHorizontal: 18,

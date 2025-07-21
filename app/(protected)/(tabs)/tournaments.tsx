@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ActiveFiltersRow from '../../../components/ActiveFiltersRow';
 import FilterBottomSheet from '../../../components/FilterBottomSheet';
 import TournamentCard from '../../../components/TournamentCard';
@@ -37,6 +38,7 @@ const initialFilters: {
 
 export default function TournamentsScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState(initialFilters);
@@ -119,7 +121,7 @@ export default function TournamentsScreen() {
   const refreshTournaments = () => fetchTournaments();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Header */}
       <Text style={styles.heading}>Tournaments</Text>
 
@@ -165,7 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#101426',
     paddingHorizontal: 12,
-    paddingTop: 16,
   },
   heading: {
     color: '#fff',

@@ -25,6 +25,13 @@ model User {
   profile  Profile?
   createdTournaments Tournament[] @relation("TournamentCreator")
   tournamentParticipants TournamentParticipant[]
+  
+  // Bracket relations
+  bracketMatchesAsPlayer1 BracketMatch[] @relation("Player1")
+  bracketMatchesAsPlayer2 BracketMatch[] @relation("Player2")
+  bracketMatchSubmissions BracketMatchSubmission[]
+  bracketSeeds BracketSeed[]
+  bracketMatchesAsWinner BracketMatch[] @relation("Winner")
 
   @@map("users")
 }
@@ -82,10 +89,14 @@ model Tournament {
   createdBy       String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  
+  // Bracket fields
+  bracketGenerated Boolean @default(false)
 
   // Relations
   creator         User @relation("TournamentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   participants    TournamentParticipant[]
+  bracket         TournamentBracket?
 
   @@map("tournaments")
 }
@@ -101,6 +112,9 @@ model TournamentParticipant {
   seed         Int?
   finalRank    Int?
   winnings     Float @default(0)
+  
+  // Bracket fields - null means player won or hasn't been eliminated yet
+  eliminatedInRound Int?
 
   // Relations
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
@@ -108,6 +122,87 @@ model TournamentParticipant {
 
   @@unique([tournamentId, userId])
   @@map("tournament_participants")
+}
+
+// Tournament Bracket Configuration
+model TournamentBracket {
+  id           String   @id @default(cuid())
+  tournamentId String   @unique
+  totalRounds  Int
+  totalPlayers Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matches      BracketMatch[]
+  seeds        BracketSeed[]
+
+  @@map("tournament_brackets")
+}
+
+// Individual Bracket Matches
+model BracketMatch {
+  id           String   @id @default(cuid())
+  bracketId    String
+  roundNumber  Int
+  matchNumber  Int
+  player1Id    String?
+  player2Id    String?
+  status       BracketMatchStatus @default(WAITING_FOR_PLAYERS)
+  winnerId     String?
+  nextMatchId  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  bracket      TournamentBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  player1      User? @relation("Player1", fields: [player1Id], references: [id], onDelete: SetNull)
+  player2      User? @relation("Player2", fields: [player2Id], references: [id], onDelete: SetNull)
+  winner       User? @relation("Winner", fields: [winnerId], references: [id], onDelete: SetNull)
+  nextMatch    BracketMatch? @relation("NextMatch", fields: [nextMatchId], references: [id], onDelete: SetNull)
+  previousMatches BracketMatch[] @relation("NextMatch")
+  submissions  BracketMatchSubmission[]
+  seeds        BracketSeed[]
+
+  @@unique([bracketId, roundNumber, matchNumber])
+  @@map("bracket_matches")
+}
+
+// Score Submissions for Bracket Matches
+model BracketMatchSubmission {
+  id           String   @id @default(cuid())
+  matchId      String
+  submittedBy  String
+  score1       Int
+  score2       Int
+  submittedAt  DateTime @default(now())
+
+  // Relations
+  match        BracketMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  submitter    User @relation(fields: [submittedBy], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, submittedBy])
+  @@map("bracket_match_submissions")
+}
+
+// Player Seeds in First Round
+model BracketSeed {
+  id           String   @id @default(cuid())
+  bracketId    String
+  playerId     String
+  seedPosition Int
+  matchId      String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  bracket      TournamentBracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  player       User @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match        BracketMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([bracketId, seedPosition])
+  @@unique([bracketId, playerId])
+  @@map("bracket_seeds")
 }
 
 // Enums
@@ -138,4 +233,12 @@ enum ParticipantStatus {
   WINNER
   RUNNER_UP
   THIRD_PLACE
+}
+
+enum BracketMatchStatus {
+  WAITING_FOR_PLAYERS // Match exists but no players assigned yet
+  PENDING            // Both players assigned, waiting for scores to be submitted
+  SUBMITTED          // One player has submitted a score
+  CONFIRMED          // Both players submitted same score, match is complete
+  DISPUTED           // Both players submitted different scores
 } 

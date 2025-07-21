@@ -3,16 +3,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 function validatePassword(password: string) {
@@ -67,7 +67,6 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register({ email: email.trim(), password });
-      Alert.alert('Success', 'Account created! Please sign in.');
       router.replace('/(protected)/(tabs)/(home)');
     } catch (error: any) {
       if (error.message && error.message.includes('Email already registered')) {
