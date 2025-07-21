@@ -134,24 +134,32 @@ class BracketMatchService {
 
       // Check if player already submitted
       const existingSubmission = match.submissions.find(s => s.submittedBy === playerId);
-      if (existingSubmission) {
+      if (existingSubmission && match.status !== 'DISPUTED') {
         throw new Error('Already submitted score for this match');
       }
 
       // Validate match status
-      if (match.status !== 'PENDING' && match.status !== 'SUBMITTED') {
+      if (!['PENDING', 'SUBMITTED', 'DISPUTED'].includes(match.status)) {
         throw new Error('Match is not ready for score submission');
       }
 
-      // Create submission
-      await prisma.bracketMatchSubmission.create({
-        data: {
-          matchId,
-          submittedBy: playerId,
-          score1,
-          score2
-        }
-      });
+      // If match is disputed and player already submitted, update their submission
+      if (match.status === 'DISPUTED' && existingSubmission) {
+        await prisma.bracketMatchSubmission.update({
+          where: { id: existingSubmission.id },
+          data: { score1, score2, submittedAt: new Date() }
+        });
+      } else {
+        // Create submission
+        await prisma.bracketMatchSubmission.create({
+          data: {
+            matchId,
+            submittedBy: playerId,
+            score1,
+            score2
+          }
+        });
+      }
 
       // Check if both players submitted
       const submissions = await prisma.bracketMatchSubmission.findMany({
@@ -161,19 +169,19 @@ class BracketMatchService {
       if (submissions.length === 2) {
         // Both players submitted - check if scores match
         const [submission1, submission2] = submissions;
-        
         if (submission1.score1 === submission2.score1 && submission1.score2 === submission2.score2) {
           // Scores match - confirm match
           await this.confirmMatch(matchId, submission1.score1, submission1.score2);
         } else {
-          // Scores don't match - mark as disputed
+          // Scores don't match - mark as disputed and delete all submissions
           await prisma.bracketMatch.update({
             where: { id: matchId },
             data: { status: 'DISPUTED' }
           });
+          await prisma.bracketMatchSubmission.deleteMany({ where: { matchId } });
         }
       } else {
-        // First submission
+        // First submission or resubmission
         await prisma.bracketMatch.update({
           where: { id: matchId },
           data: { status: 'SUBMITTED' }
