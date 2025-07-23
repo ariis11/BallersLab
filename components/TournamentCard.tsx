@@ -66,7 +66,7 @@ const TournamentCard: React.FC<TournamentCardProps> = ({ item, index, user, refr
         </TouchableOpacity>
       ) : (
         <View style={[styles.closedButton, { opacity: 0.7 }]}> 
-          <Text style={styles.closedButtonText}>Registration Closed</Text>
+          <Text style={styles.closedButtonText}>Closed</Text>
         </View>
       )}
     </View>

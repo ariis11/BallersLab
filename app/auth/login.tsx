@@ -30,7 +30,7 @@ export default function LoginScreen() {
     try {
       await login({ email: email.trim(), password });
       // Navigate to main app (tabs)
-      router.replace('/(protected)/(tabs)/(home)');
+      router.replace('/(protected)/(tabs)/tournaments');
     } catch (error: any) {
       Alert.alert('Login failed', error.message || 'Invalid credentials');
     } finally {
