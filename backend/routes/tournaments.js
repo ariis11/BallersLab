@@ -528,6 +528,112 @@ router.post('/join/:id', auth, async (req, res) => {
   }
 });
 
+// Join tournament by code
+router.post('/join-by-code', auth, async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Tournament code is required' });
+    }
+
+    // Find tournament by code with filtered participants in a single query
+    const tournament = await prisma.tournament.findUnique({
+      where: { 
+        code: code.toUpperCase()
+      },
+      include: {
+        participants: {
+          where: {
+            userId: req.user.id
+          }
+        }
+      }
+    });
+
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournament not found with this code' });
+    }
+
+    // Check if tournament is open for registration
+    if (tournament.status !== 'REGISTRATION_OPEN') {
+      return res.status(400).json({ error: 'Tournament is not open for registration' });
+    }
+
+    // Check if tournament is full
+    if (tournament.currentPlayers >= tournament.maxPlayers) {
+      return res.status(400).json({ error: 'Tournament is full' });
+    }
+
+    // Check if user is already registered (using the filtered participants from the query)
+    if (tournament.participants.length > 0) {
+      return res.status(400).json({ error: 'Already registered for this tournament' });
+    }
+
+    // Use a transaction to ensure data consistency and reduce DB calls
+    const result = await prisma.$transaction(async (tx) => {
+      // Add participant
+      const participant = await tx.tournamentParticipant.create({
+        data: {
+          tournamentId: tournament.id,
+          userId: req.user.id
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  avatar: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Update tournament player count and check if full in one operation
+      const updatedTournament = await tx.tournament.update({
+        where: { id: tournament.id },
+        data: {
+          currentPlayers: {
+            increment: 1
+          },
+          // If the new count equals maxPlayers, close registration
+          status: {
+            set: tournament.currentPlayers + 1 >= tournament.maxPlayers ? 'REGISTRATION_CLOSED' : tournament.status
+          }
+        }
+      });
+
+      // Log if tournament is now full
+      if (updatedTournament.status === 'REGISTRATION_CLOSED') {
+        console.log(`🔄 Tournament ${tournament.id} registration closed (now full)`);
+      }
+
+      return { participant, updatedTournament };
+    });
+
+    res.json({
+      message: 'Successfully joined tournament',
+      tournament: {
+        id: tournament.id,
+        title: tournament.title,
+        locationName: tournament.locationName,
+        startDate: tournament.startDate
+      },
+      participant: result.participant
+    });
+  } catch (error) {
+    console.error('Join tournament by code error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Leave tournament
 router.post('/leave/:id', auth, async (req, res) => {
   try {

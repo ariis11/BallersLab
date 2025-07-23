@@ -3,7 +3,7 @@ import { convertLocalDateToUTC } from '@/utils/dateUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ActiveFiltersRow from '../../../components/ActiveFiltersRow';
 import FilterBottomSheet from '../../../components/FilterBottomSheet';
@@ -45,6 +45,11 @@ export default function TournamentsScreen() {
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [pendingFilters, setPendingFilters] = useState(initialFilters);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Join by code modal state
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joiningTournament, setJoiningTournament] = useState(false);
 
   // Helper to get user location if distance filter is set
   const ensureUserLocation = async () => {
@@ -120,6 +125,43 @@ export default function TournamentsScreen() {
   // Add a refreshTournaments function for child components
   const refreshTournaments = () => fetchTournaments();
 
+  const handleJoinByCode = async () => {
+    if (!joinCode.trim()) {
+      Alert.alert('Error', 'Please enter a tournament code');
+      return;
+    }
+
+    setJoiningTournament(true);
+    try {
+      const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
+      
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/join-by-code`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to join tournament');
+      }
+
+      Alert.alert('Success', 'Successfully joined tournament!');
+      setShowJoinModal(false);
+      setJoinCode('');
+      
+      // Refresh tournaments list
+      fetchTournaments();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to join tournament');
+    } finally {
+      setJoiningTournament(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Header */}
@@ -130,6 +172,10 @@ export default function TournamentsScreen() {
         <TouchableOpacity style={styles.filtersButton} onPress={openFilterSheet}>
           <MaterialCommunityIcons name="filter-variant" size={20} color="#fff" />
           <Text style={styles.filtersButtonText}>Filters</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.joinCodeButton} onPress={() => setShowJoinModal(true)}>
+          <MaterialCommunityIcons name="ticket-confirmation" size={20} color="#fff" />
+          <Text style={styles.joinCodeButtonText}>Join Code</Text>
         </TouchableOpacity>
         <ActiveFiltersRow activeFilters={activeFilters} onRemove={removeFilter} />
       </View>
@@ -151,6 +197,53 @@ export default function TournamentsScreen() {
           ListEmptyComponent={<Text style={{ color: '#fff', textAlign: 'center', marginTop: 32 }}>No tournaments found.</Text>}
         />
       )}
+
+      {/* Join by Code Modal */}
+      <Modal
+        visible={showJoinModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowJoinModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Join Tournament</Text>
+            <View style={styles.codeInputContainer}>
+              <Text style={styles.codeLabel}>Tournament Code</Text>
+              <TextInput
+                style={styles.codeInput}
+                value={joinCode}
+                onChangeText={(text) => setJoinCode(text.toUpperCase())}
+                placeholder="Enter code (e.g., ABC123)"
+                placeholderTextColor="#A0A4B8"
+                autoCapitalize="characters"
+                editable={!joiningTournament}
+                textAlign="center"
+              />
+            </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setShowJoinModal(false)}
+                disabled={joiningTournament}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.submitButton, joiningTournament && styles.submitButtonDisabled]}
+                onPress={handleJoinByCode}
+                disabled={joiningTournament}
+              >
+                <Text style={styles.submitButtonText}>
+                  {joiningTournament ? 'Joining...' : 'Join Tournament'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Bottom Sheet */}
       <FilterBottomSheet
         visible={showFilterSheet}
         pendingFilters={pendingFilters}
@@ -350,5 +443,90 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     textAlign: 'center',
+  },
+  // Join by code button styles
+  joinCodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181C2E',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginLeft: 8,
+  },
+  joinCodeButtonText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#181C2E',
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 300,
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  codeInputContainer: {
+    marginBottom: 16,
+  },
+  codeLabel: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  codeInput: {
+    backgroundColor: '#101426',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#2A3441',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: '#00E6FF',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: '#101426',
+    fontWeight: 'bold',
   },
 }); 

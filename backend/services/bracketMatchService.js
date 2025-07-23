@@ -274,12 +274,17 @@ class BracketMatchService {
         throw new Error('Next match already has both players');
       }
 
+      // Determine the new status based on updated player assignments
+      const newPlayer1Id = updateData.player1Id || nextMatch.player1Id;
+      const newPlayer2Id = updateData.player2Id || nextMatch.player2Id;
+      const newStatus = newPlayer1Id && newPlayer2Id ? 'PENDING' : 'WAITING_FOR_PLAYERS';
+
       // Update next match
       await prisma.bracketMatch.update({
         where: { id: nextMatchId },
         data: {
           ...updateData,
-          status: nextMatch.player1Id && nextMatch.player2Id ? 'PENDING' : 'WAITING_FOR_PLAYERS'
+          status: newStatus
         }
       });
     } catch (error) {

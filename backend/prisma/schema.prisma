@@ -86,6 +86,7 @@ model Tournament {
   status          TournamentStatus @default(DRAFT)
   isPublic        Boolean @default(true)
   registrationDeadline DateTime?
+  code            String?  @unique // Tournament code for joining
   createdBy       String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
