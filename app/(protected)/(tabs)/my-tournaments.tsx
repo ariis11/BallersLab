@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CreateTournamentModal from '../../../components/CreateTournamentModal';
 import TournamentCard from '../../../components/TournamentCard';
 
 // Active Tournament Card Component
@@ -70,6 +71,9 @@ const MyTournamentsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('upcoming');
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Create tournament modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Dummy refresh function (replace with real refetch if needed)
   const refreshTournaments = () => fetchTournaments(selectedCategory);
@@ -112,10 +116,27 @@ const MyTournamentsScreen = () => {
       ? tournaments
       : DUMMY_TOURNAMENTS[selectedCategory] || [];
 
+  const handleCreateTournament = (tournamentData: any) => {
+    // TODO: Implement API call
+    console.log('Creating tournament:', tournamentData);
+    setShowCreateModal(false);
+    // Refresh tournaments list
+    fetchTournaments(selectedCategory);
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-      {/* Header */}
-      <Text style={styles.header}>My Tournaments</Text>
+      {/* Header with Create Button */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>My Tournaments</Text>
+        <TouchableOpacity 
+          style={styles.createButton}
+          onPress={() => setShowCreateModal(true)}
+        >
+          <MaterialCommunityIcons name="plus" size={20} color="#00E6FF" />
+          <Text style={styles.createButtonText}>Create</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Category Selector */}
       <View style={styles.categoryRow}>
@@ -162,18 +183,44 @@ const MyTournamentsScreen = () => {
           contentContainerStyle={{ flexGrow: 1 }}
         />
       )}
+
+      {/* Create Tournament Modal */}
+      <CreateTournamentModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateTournament}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A1121', paddingHorizontal: 16 },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   header: { 
     color: 'white', 
     fontSize: 20, 
     fontWeight: 'bold', 
     textAlign: 'center',
-    marginBottom: 20 
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#181F33',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  createButtonText: {
+    color: '#00E6FF',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginLeft: 8,
   },
   categoryRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
   categoryButton: {
