@@ -1,0 +1,59 @@
+import { Colors } from '@/constants/Colors';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+interface ToggleSwitchProps {
+  label: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  iconOn?: keyof typeof MaterialCommunityIcons.glyphMap;
+  iconOff?: keyof typeof MaterialCommunityIcons.glyphMap;
+}
+
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  label,
+  value,
+  onValueChange,
+  iconOn = "eye",
+  iconOff = "eye-off",
+}) => {
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.toggle}
+        onPress={() => onValueChange(!value)}
+      >
+        <MaterialCommunityIcons 
+          name={value ? iconOn : iconOff} 
+          size={20} 
+          color={value ? Colors.app.primary : Colors.app.textSecondary} 
+        />
+        <Text style={styles.toggleText}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 15,
+  },
+  toggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.app.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  toggleText: {
+    color: Colors.app.text,
+    fontSize: 14,
+    marginLeft: 10,
+  },
+});
+
+export default ToggleSwitch; 

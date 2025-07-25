@@ -23,4 +23,18 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  // App-specific design system colors
+  app: {
+    primary: '#00E6FF',
+    primaryDark: '#101426',
+    background: '#0A1121',
+    surface: '#181F33',
+    surfaceLight: '#232B3A',
+    border: '#2A3047',
+    text: '#fff',
+    textSecondary: '#A0A4B8',
+    error: '#FF6B6B',
+    success: '#4CAF50',
+    warning: '#FF9800',
+  }
 };
