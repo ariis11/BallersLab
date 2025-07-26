@@ -10,6 +10,11 @@ class BracketMatchService {
       const bracket = await prisma.tournamentBracket.findUnique({
         where: { tournamentId },
         include: {
+          tournament: {
+            select: {
+              status: true
+            }
+          },
           matches: {
             include: {
               player1: {
@@ -314,6 +319,7 @@ class BracketMatchService {
       tournamentId: bracket.tournamentId,
       totalRounds: bracket.totalRounds,
       totalPlayers: bracket.totalPlayers,
+      tournamentStatus: bracket.tournament?.status || 'UNKNOWN',
       rounds
     };
   }

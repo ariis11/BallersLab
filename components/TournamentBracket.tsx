@@ -25,6 +25,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracketData, onSc
         key={match.id}
         match={match}
         onScoreSubmit={onScoreSubmit}
+        tournamentStatus={bracketData.tournamentStatus}
       />
     ));
   };

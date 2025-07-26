@@ -35,6 +35,7 @@ export interface BracketData {
   tournamentId: string;
   totalRounds: number;
   totalPlayers: number;
+  tournamentStatus?: string;
   rounds: RoundData[];
 }
 
@@ -46,4 +47,5 @@ export interface TournamentBracketProps {
 export interface TournamentBracketCardProps {
   match: MatchData;
   onScoreSubmit: (matchId: string, score1: number, score2: number) => Promise<void>;
+  tournamentStatus?: string;
 } 

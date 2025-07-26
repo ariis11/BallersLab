@@ -34,7 +34,7 @@ const ActiveTournamentCard = ({ tournament }: any) => {
             activeOpacity={0.8}
             onPress={handleViewBracket}
           >
-            <Text style={styles.viewBracketButtonTextV2}>View Bracket</Text>
+            <Text style={styles.viewBracketButtonTextV2}>Bracket</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.nextMatchV2}>{`Next Match: ${tournament.nextMatch}`}</Text>
@@ -43,16 +43,71 @@ const ActiveTournamentCard = ({ tournament }: any) => {
   );
 };
 
-// Placeholder TournamentCard for other categories - replace with your actual component or import
-const TournamentCardLegacy = ({ tournament, category }: any) => (
-  <View style={styles.card}>
-    <Text style={styles.cardTitle}>{tournament.name}</Text>
-    <View style={styles.cardAction}>
-      {category === 'finished' && <Text style={styles.actionBtn}>Results</Text>}
-      {category === 'created' && <Text style={styles.actionBtn}>Edit</Text>}
+// Created Tournament Card Component
+const CreatedTournamentCard = ({ tournament, onEdit }: any) => {
+  const handleEdit = () => {
+    onEdit(tournament);
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.iconCircle}>
+        <MaterialCommunityIcons name="crown" size={32} color="#FFD700" />
+      </View>
+      <View style={styles.infoBlockV2}>
+        <Text style={styles.title}>{tournament.title}</Text>
+        <View style={styles.rowBetween}>
+          <Text style={styles.round}>{`${tournament.currentPlayers || 0}/${tournament.maxPlayers} Players`}</Text>
+          <TouchableOpacity 
+            style={styles.viewBracketButtonV2} 
+            activeOpacity={0.8}
+            onPress={handleEdit}
+          >
+            <Text style={styles.viewBracketButtonTextV2}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.nextMatchV2}>{`Start Date: ${new Date(tournament.startDate).toLocaleDateString()}`}</Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
+
+// Finished Tournament Card Component
+const FinishedTournamentCard = ({ tournament, user }: any) => {
+  const router = useRouter();
+
+  const handleViewBracket = () => {
+    router.push({
+      pathname: '/bracket',
+      params: { 
+        tournamentId: tournament.id
+      }
+    });
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.iconCircle}>
+      <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
+        {/* <MaterialCommunityIcons name="trophy" size={32} color="#00E6FF" /> */}
+      </View>
+      <View style={styles.infoBlockV2}>
+        <Text style={styles.title}>{tournament.title}</Text>
+        <View style={styles.rowBetween}>
+          <Text style={styles.round}>{`Final Position: 1st`}</Text>
+          <TouchableOpacity 
+            style={styles.viewBracketButtonV2} 
+            activeOpacity={0.8}
+            onPress={handleViewBracket}
+          >
+            <Text style={styles.viewBracketButtonTextV2}>Results</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.nextMatchV2}>{`Tournament Date: ${new Date(tournament.startDate).toLocaleDateString()}`}</Text>
+      </View>
+    </View>
+  );
+};
 
 const CATEGORIES = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -74,6 +129,8 @@ const MyTournamentsScreen = () => {
   
   // Create tournament modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTournament, setEditingTournament] = useState<any>(null);
 
   // Dummy refresh function (replace with real refetch if needed)
   const refreshTournaments = () => fetchTournaments(selectedCategory);
@@ -84,8 +141,8 @@ const MyTournamentsScreen = () => {
   }, [selectedCategory]);
 
   async function fetchTournaments(category: CategoryKey) {
-    if (category !== 'upcoming' && category !== 'active') return;
     setLoading(true);
+    
     try {
       const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
       const res = await fetch(`${API_URL}?type=${category}`, {
@@ -111,14 +168,22 @@ const MyTournamentsScreen = () => {
     ],
   };
 
-  const displayTournaments =
-    selectedCategory === 'upcoming' || selectedCategory === 'active'
-      ? tournaments
-      : DUMMY_TOURNAMENTS[selectedCategory] || [];
 
   const handleCreateTournament = (tournamentData: any) => {
     // TODO: Implement API call
     setShowCreateModal(false);
+    // Refresh tournaments list
+    fetchTournaments(selectedCategory);
+  };
+
+  const handleEditTournament = (tournament: any) => {
+    setEditingTournament(tournament);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateTournament = (tournamentData: any) => {
+    setShowEditModal(false);
+    setEditingTournament(null);
     // Refresh tournaments list
     fetchTournaments(selectedCategory);
   };
@@ -165,15 +230,24 @@ const MyTournamentsScreen = () => {
         <ActivityIndicator size="large" color="#00E6FF" style={{ marginTop: 32 }} />
       ) : (
         <FlatList
-          data={displayTournaments}
+          data={tournaments}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             selectedCategory === 'active' ? (
               <ActiveTournamentCard tournament={item} />
             ) : selectedCategory === 'upcoming' ? (
               <TournamentCard item={item} index={0} user={user} refreshTournaments={refreshTournaments} />
+            ) : selectedCategory === 'finished' ? (
+              <FinishedTournamentCard tournament={item} user={user} />
+            ) : selectedCategory === 'created' ? (
+              <CreatedTournamentCard tournament={item} onEdit={handleEditTournament} />
             ) : (
-              <TournamentCardLegacy tournament={item} category={selectedCategory} />
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <View style={styles.cardAction}>
+                  <Text style={styles.actionBtn}>Edit</Text>
+                </View>
+              </View>
             )
           )}
           ListEmptyComponent={
@@ -188,6 +262,31 @@ const MyTournamentsScreen = () => {
         visible={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateTournament}
+      />
+
+      {/* Edit Tournament Modal */}
+      <CreateTournamentModal
+        visible={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTournament(null);
+        }}
+        onSubmit={handleUpdateTournament}
+        mode="edit"
+        tournamentId={editingTournament?.id}
+        initialData={editingTournament ? {
+          title: editingTournament.title,
+          description: editingTournament.description || '',
+          locationName: editingTournament.locationName,
+          latitude: editingTournament.latitude,
+          longitude: editingTournament.longitude,
+          maxPlayers: editingTournament.maxPlayers?.toString() || '',
+          skillLevel: editingTournament.skillLevel || 'ALL_LEVELS',
+          ageGroup: editingTournament.ageGroup || 'ALL_AGES',
+          isPublic: editingTournament.isPublic !== false,
+          startDateTime: new Date(editingTournament.startDate),
+          registrationDeadline: editingTournament.registrationDeadline ? new Date(editingTournament.registrationDeadline) : new Date(),
+        } : undefined}
       />
     </View>
   );
@@ -221,13 +320,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
   },
-  categoryRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
+  categoryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   categoryButton: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#181F33',
-    marginHorizontal: 4,
   },
   categoryButtonActive: {
     backgroundColor: '#00E6FB',
@@ -242,7 +340,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -259,7 +357,6 @@ const styles = StyleSheet.create({
     marginRight: 16,
     borderWidth: 2,
     borderColor: '#00E6FF',
-    marginTop: 2,
   },
   infoBlockV2: {
     flex: 1,

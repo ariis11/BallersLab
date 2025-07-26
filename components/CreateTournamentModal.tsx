@@ -6,14 +6,17 @@ import { Colors } from '@/constants/Colors';
 import { AGE_GROUPS, CreateTournamentModalProps, TournamentFormData } from '@/types/tournament';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapPickerModal from './MapPickerModal';
 
 const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ 
   visible, 
   onClose, 
-  onSubmit 
+  onSubmit,
+  mode = 'create',
+  initialData,
+  tournamentId
 }) => {
   const [tournamentForm, setTournamentForm] = useState<TournamentFormData>({
     title: '',
@@ -32,6 +35,12 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    if (visible && mode === 'edit' && initialData) {
+      setTournamentForm(initialData);
+    }
+  }, [visible, mode, initialData]);
 
   const resetForm = () => {
     setTournamentForm({
@@ -112,8 +121,14 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     try {
       const authToken = await AsyncStorage.getItem('authToken');
       
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/create`, {
-        method: 'POST',
+      const endpoint = mode === 'edit' 
+        ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/update/${tournamentId}`
+        : `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/create`;
+      
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+      
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
@@ -134,14 +149,13 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create tournament');
+        throw new Error(errorData.error || `Failed to ${mode} tournament`);
       }
 
       onSubmit(tournamentForm);
       resetForm();
     } catch (error) {
-      console.error('Create tournament error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create tournament';
+      const errorMessage = error instanceof Error ? error.message : `Failed to ${mode} tournament`;
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -160,7 +174,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.app.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Create Tournament</Text>
+          <Text style={styles.modalTitle}>{mode === 'edit' ? 'Edit Tournament' : 'Create Tournament'}</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -267,7 +281,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             disabled={isSubmitting}
           >
             <Text style={styles.createButtonText}>
-              {isSubmitting ? 'Creating...' : 'Create Tournament'}
+              {isSubmitting ? (mode === 'edit' ? 'Updating...' : 'Creating...') : (mode === 'edit' ? 'Update Tournament' : 'Create Tournament')}
             </Text>
           </TouchableOpacity>
         </View>

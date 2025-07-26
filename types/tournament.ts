@@ -19,6 +19,9 @@ export interface CreateTournamentModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (tournamentData: TournamentFormData) => void;
+  mode?: 'create' | 'edit';
+  initialData?: TournamentFormData;
+  tournamentId?: string;
 }
 
 export const SKILL_LEVELS = [

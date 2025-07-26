@@ -4,7 +4,7 @@ import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } fro
 import { useAuth } from '../hooks/useAuth';
 import { TournamentBracketCardProps } from '../types/bracket';
 
-const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, onScoreSubmit }) => {
+const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, onScoreSubmit, tournamentStatus }) => {
   const { user } = useAuth();
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [score1, setScore1] = useState('');
@@ -31,12 +31,13 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
   const player2HasSubmitted = !!match.player2Submission;
 
   // For running matches: show submit button only for participant who hasn't submitted
-  const canSubmitScore = isRunning && (
+  // Disable score submission for completed tournaments
+  const canSubmitScore = isRunning && tournamentStatus !== 'COMPLETED' && (
     (isPlayer1 && !player1HasSubmitted) || (isPlayer2 && !player2HasSubmitted)
   );
 
-  // For disputed matches: both participants can resubmit
-  const canResubmit = isDisputed && isParticipant;
+  // For disputed matches: both participants can resubmit (but not for completed tournaments)
+  const canResubmit = isDisputed && isParticipant && tournamentStatus !== 'COMPLETED';
 
   const handleSubmitScore = async () => {
     setErrorMessage(null);
