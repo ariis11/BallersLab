@@ -4,10 +4,12 @@ import { convertLocalDateToUTC } from '@/utils/dateUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ActiveFiltersRow from '../../../components/ActiveFiltersRow';
 import FilterBottomSheet from '../../../components/FilterBottomSheet';
+import JoinByCodeModal from '../../../components/JoinByCodeModal';
+import SortBottomSheet from '../../../components/SortBottomSheet';
 import TournamentCard from '../../../components/TournamentCard';
 
 // Extended filter state
@@ -26,6 +28,12 @@ const initialFilters: FilterState = {
   distance: null,
 };
 
+interface SortOption {
+  label: string;
+  value: string;
+  order: 'asc' | 'desc';
+}
+
 export default function TournamentsScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -38,8 +46,10 @@ export default function TournamentsScreen() {
   
   // Join by code modal state
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [joinCode, setJoinCode] = useState('');
-  const [joiningTournament, setJoiningTournament] = useState(false);
+
+  // Sort state
+  const [showSortSheet, setShowSortSheet] = useState(false);
+  const [currentSort, setCurrentSort] = useState<SortOption | null>(null);
 
   // Helper to get user location if distance filter is set
   const ensureUserLocation = async () => {
@@ -82,6 +92,13 @@ export default function TournamentsScreen() {
         params.userLng = String(loc.lng);
         params.distance = String(filters.distance);
       }
+      
+      // Add sort parameters
+      if (currentSort) {
+        params.sortBy = currentSort.value;
+        params.sortOrder = currentSort.order;
+      }
+      
       url += Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
       const res = await fetch(url);
       const data = await res.json();
@@ -94,7 +111,7 @@ export default function TournamentsScreen() {
 
   useEffect(() => {
     fetchTournaments();
-  }, [activeFilters]);
+  }, [activeFilters, currentSort]);
 
   // Open filter sheet, copy current filters to pending
   const openFilterSheet = () => {
@@ -116,60 +133,38 @@ export default function TournamentsScreen() {
   // Add a refreshTournaments function for child components
   const refreshTournaments = () => fetchTournaments();
 
-  const handleJoinByCode = async () => {
-    if (!joinCode.trim()) {
-      Alert.alert('Error', 'Please enter a tournament code');
-      return;
-    }
+  // Check if there are any active filters
+  const hasActiveFilters = Object.values(activeFilters).some(value => 
+    value !== null && value !== undefined && value !== ''
+  );
 
-    setJoiningTournament(true);
-    try {
-      const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
-      
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/join-by-code`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to join tournament');
-      }
-
-      Alert.alert('Success', 'Successfully joined tournament!');
-      setShowJoinModal(false);
-      setJoinCode('');
-      
-      // Refresh tournaments list
-      fetchTournaments();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to join tournament');
-    } finally {
-      setJoiningTournament(false);
-    }
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       {/* Header */}
       <Text style={styles.heading}>Tournaments</Text>
 
-      {/* Filters Row */}
-      <View style={styles.filtersRow}>
+      {/* Action Buttons Row */}
+      <View style={styles.actionButtonsRow}>
         <TouchableOpacity style={styles.filtersButton} onPress={openFilterSheet}>
           <MaterialCommunityIcons name="filter-variant" size={20} color="#fff" />
           <Text style={styles.filtersButtonText}>Filters</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.sortButton} onPress={() => setShowSortSheet(true)}>
+          <MaterialCommunityIcons name="sort-variant" size={20} color="#fff" />
+          <Text style={styles.sortButtonText}>Sort</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.joinCodeButton} onPress={() => setShowJoinModal(true)}>
           <MaterialCommunityIcons name="ticket-confirmation" size={20} color="#fff" />
-          <Text style={styles.joinCodeButtonText}>Join Code</Text>
+          <Text style={styles.joinCodeButtonText}>Join by Code</Text>
         </TouchableOpacity>
-        <ActiveFiltersRow activeFilters={activeFilters} onRemove={removeFilter} />
       </View>
+
+      {/* Active Filters Row */}
+      {hasActiveFilters && (
+        <ActiveFiltersRow activeFilters={activeFilters} onRemove={removeFilter} />
+      )}
 
       {/* Tournament List */}
       {loading ? (
@@ -190,49 +185,11 @@ export default function TournamentsScreen() {
       )}
 
       {/* Join by Code Modal */}
-      <Modal
+      <JoinByCodeModal
         visible={showJoinModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowJoinModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Join Tournament</Text>
-            <View style={styles.codeInputContainer}>
-              <Text style={styles.codeLabel}>Tournament Code</Text>
-              <TextInput
-                style={styles.codeInput}
-                value={joinCode}
-                onChangeText={(text) => setJoinCode(text.toUpperCase())}
-                placeholder="Enter code (e.g., ABC123)"
-                placeholderTextColor="#A0A4B8"
-                autoCapitalize="characters"
-                editable={!joiningTournament}
-                textAlign="center"
-              />
-            </View>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setShowJoinModal(false)}
-                disabled={joiningTournament}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.submitButton, joiningTournament && styles.submitButtonDisabled]}
-                onPress={handleJoinByCode}
-                disabled={joiningTournament}
-              >
-                <Text style={styles.submitButtonText}>
-                  {joiningTournament ? 'Joining...' : 'Join Tournament'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowJoinModal(false)}
+        onJoinSuccess={() => fetchTournaments()}
+      />
 
       {/* Filter Bottom Sheet */}
       <FilterBottomSheet
@@ -241,6 +198,14 @@ export default function TournamentsScreen() {
         setPendingFilters={setPendingFilters}
         onDone={applyFilters}
         onClose={() => setShowFilterSheet(false)}
+      />
+
+      {/* Sort Bottom Sheet */}
+      <SortBottomSheet
+        visible={showSortSheet}
+        currentSort={currentSort}
+        onSortChange={setCurrentSort}
+        onClose={() => setShowSortSheet(false)}
       />
     </View>
   );
@@ -259,21 +224,44 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
   filtersRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
   filtersButton: {
+    flex: 0.8,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#181C2E',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    marginRight: 8,
   },
   filtersButtonText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  sortButton: {
+    flex: 0.8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#181C2E',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  sortButtonText: {
     color: '#fff',
     marginLeft: 6,
     fontWeight: '600',
@@ -437,13 +425,14 @@ const styles = StyleSheet.create({
   },
   // Join by code button styles
   joinCodeButton: {
+    flex: 1.4,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#181C2E',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    marginLeft: 8,
   },
   joinCodeButtonText: {
     color: '#fff',
@@ -451,73 +440,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#181C2E',
-    borderRadius: 16,
-    padding: 24,
-    width: '80%',
-    maxWidth: 300,
-  },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  codeInputContainer: {
-    marginBottom: 16,
-  },
-  codeLabel: {
-    color: '#fff',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  codeInput: {
-    backgroundColor: '#101426',
-    borderRadius: 8,
-    padding: 12,
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#2A3441',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  submitButton: {
-    flex: 1,
-    backgroundColor: '#00E6FF',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: '#101426',
-    fontWeight: 'bold',
-  },
+
 }); 

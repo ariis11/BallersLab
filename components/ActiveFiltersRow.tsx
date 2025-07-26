@@ -1,4 +1,4 @@
-import { AGE_GROUPS, FilterState, SKILL_LEVELS } from '@/types/tournament';
+import { AGE_GROUPS, FilterState } from '@/types/tournament';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -30,17 +30,6 @@ const ActiveFiltersRow: React.FC<ActiveFiltersRowProps> = ({ activeFilters, onRe
       <View key="status" style={styles.filterChipActive}>
         <Text style={[styles.filterChipText, styles.filterChipTextActive]}>Status: {f.label}</Text>
         <TouchableOpacity onPress={() => onRemove('status')}>
-          <MaterialCommunityIcons name="close" size={16} color="#101426" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  if (activeFilters.skillLevel) {
-    const f = SKILL_LEVELS.find(f => f.value === activeFilters.skillLevel);
-    if (f) chips.push(
-      <View key="skillLevel" style={styles.filterChipActive}>
-        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>Skill: {f.label}</Text>
-        <TouchableOpacity onPress={() => onRemove('skillLevel')}>
           <MaterialCommunityIcons name="close" size={16} color="#101426" />
         </TouchableOpacity>
       </View>
@@ -109,16 +98,27 @@ const ActiveFiltersRow: React.FC<ActiveFiltersRowProps> = ({ activeFilters, onRe
     );
   }
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersChipsRow}>
+    <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false} 
+      contentContainerStyle={styles.filtersChipsRow}
+      style={styles.filtersScrollView}
+    >
       {chips}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  filtersScrollView: {
+    paddingHorizontal: 0,
+    minHeight: 32,
+    marginBottom: 16,
+  },
   filtersChipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 0,
   },
   filterChipActive: {
     flexDirection: 'row',
@@ -126,13 +126,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#00E6FF',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 6,
     marginRight: 8,
+    minHeight: 24,
   },
   filterChipText: {
     fontWeight: '600',
     marginRight: 4,
     fontSize: 13,
+    flexShrink: 1,
   },
   filterChipTextActive: {
     color: '#101426',

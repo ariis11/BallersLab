@@ -1,4 +1,4 @@
-import { AGE_GROUPS, FilterState, SKILL_LEVELS } from '@/types/tournament';
+import { AGE_GROUPS, FilterState } from '@/types/tournament';
 import React from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -42,20 +42,6 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({ visible, pendingF
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.sheetGroupTitle}>Skill Level</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollView}>
-            <View style={styles.sheetChipsRow}>
-              {SKILL_LEVELS.map(filter => (
-                <TouchableOpacity
-                  key={filter.value}
-                  style={[styles.sheetChip, pendingFilters.skillLevel === filter.value ? styles.sheetChipActive : styles.sheetChipInactive]}
-                  onPress={() => setPendingFilters(f => ({ ...f, skillLevel: f.skillLevel === filter.value ? null : filter.value }))}
-                >
-                  <Text style={[styles.sheetChipText, pendingFilters.skillLevel === filter.value ? styles.sheetChipTextActive : styles.sheetChipTextInactive]}>{filter.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
           <Text style={styles.sheetGroupTitle}>Age Group</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollView}>
             <View style={styles.sheetChipsRow}>
