@@ -80,7 +80,8 @@ model Tournament {
   latitude        Float
   longitude       Float
   startDate       DateTime
-  skillLevel      SkillLevel
+  skillLevel      SkillLevel @default(ALL_LEVELS)
+  ageGroup        AgeGroup @default(ALL_AGES)
   maxPlayers      Int
   currentPlayers  Int @default(0)
   status          TournamentStatus @default(DRAFT)
@@ -213,6 +214,15 @@ enum SkillLevel {
   ADVANCED
   PROFESSIONAL
   ALL_LEVELS
+}
+
+enum AgeGroup {
+  U12
+  U14
+  U16
+  U18
+  OVER_18
+  ALL_AGES
 }
 
 enum TournamentStatus {

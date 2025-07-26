@@ -9,6 +9,7 @@ interface CustomDateTimePickerProps {
   value: Date;
   onValueChange: (date: Date) => void;
   required?: boolean;
+  error?: string;
 }
 
 const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
@@ -16,6 +17,7 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
   value,
   onValueChange,
   required = false,
+  error,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
@@ -56,7 +58,7 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
           {label} {required && '*'}
         </Text>
         <TouchableOpacity
-          style={styles.dateTimePicker}
+          style={[styles.dateTimePicker, error && styles.inputError]}
           onPress={handleShowPicker}
         >
           <Text style={styles.dateTimeText}>
@@ -64,6 +66,7 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
           </Text>
           <MaterialCommunityIcons name="calendar-clock" size={20} color={Colors.app.primary} />
         </TouchableOpacity>
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
 
       {showPicker && (
@@ -106,6 +109,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.app.border,
+  },
+  inputError: {
+    borderColor: Colors.app.error,
   },
   dateTimeText: {
     color: Colors.app.text,
@@ -157,6 +165,12 @@ const styles = StyleSheet.create({
   picker: {
     width: '100%',
     minWidth: 250,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
   },
 });
 

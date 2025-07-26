@@ -3,7 +3,7 @@ import DropdownSelect from '@/components/ui/DropdownSelect';
 import FormInput from '@/components/ui/FormInput';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
 import { Colors } from '@/constants/Colors';
-import { CreateTournamentModalProps, SKILL_LEVELS, TournamentFormData } from '@/types/tournament';
+import { AGE_GROUPS, CreateTournamentModalProps, TournamentFormData } from '@/types/tournament';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
@@ -23,36 +23,87 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     longitude: undefined,
     maxPlayers: '',
     skillLevel: 'ALL_LEVELS',
+    ageGroup: 'ALL_AGES',
     isPublic: true,
     startDateTime: new Date(),
     registrationDeadline: new Date(),
   });
 
   const [showMapPicker, setShowMapPicker] = useState(false);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  const resetForm = () => {
+    setTournamentForm({
+      title: '',
+      description: '',
+      locationName: '',
+      latitude: undefined,
+      longitude: undefined,
+      maxPlayers: '',
+      skillLevel: 'ALL_LEVELS',
+      ageGroup: 'ALL_AGES',
+      isPublic: true,
+      startDateTime: new Date(),
+      registrationDeadline: new Date(),
+    });
+    setErrors({});
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleBack = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // Validate required fields
+    setErrors({});
+
+    const newErrors: {[key: string]: string} = {};
+
     if (!tournamentForm.title.trim()) {
-      Alert.alert('Error', 'Tournament name is required');
-      return;
+      newErrors.title = 'Tournament name is required';
     }
 
     if (!tournamentForm.locationName.trim()) {
-      Alert.alert('Error', 'Location is required');
-      return;
-    }
-
-    if (!tournamentForm.maxPlayers.trim()) {
-      Alert.alert('Error', 'Max players is required');
-      return;
+      newErrors.locationName = 'Location name is required';
     }
 
     if (!tournamentForm.latitude || !tournamentForm.longitude) {
-      Alert.alert('Error', 'Please select a location on the map');
+      newErrors.mapLocation = 'Please select a location on the map';
+    }
+
+    if (!tournamentForm.maxPlayers.trim()) {
+      newErrors.maxPlayers = 'Max players is required';
+    } else {
+      const maxPlayersNum = parseInt(tournamentForm.maxPlayers, 10);
+      if (isNaN(maxPlayersNum)) {
+        newErrors.maxPlayers = 'Max players must be a number';
+      } else if (maxPlayersNum < 4) {
+        newErrors.maxPlayers = 'Max players must be at least 4';
+      }
+    }
+
+    const now = new Date();
+    if (tournamentForm.startDateTime <= now) {
+      newErrors.startDateTime = 'Start date & time must be in the future';
+    }
+    if (tournamentForm.registrationDeadline <= now) {
+      newErrors.registrationDeadline = 'Registration deadline must be in the future';
+    }
+    if (tournamentForm.startDateTime <= tournamentForm.registrationDeadline) {
+      newErrors.startDateTime = 'Start date & time must be after registration deadline';
+    }
+
+    // If there are errors, display them and return
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -70,11 +121,11 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
         body: JSON.stringify({
           title: tournamentForm.title.trim(),
           description: tournamentForm.description.trim(),
-          locationName: tournamentForm.locationName,
+          locationName: tournamentForm.locationName.trim(),
           latitude: tournamentForm.latitude,
           longitude: tournamentForm.longitude,
           startDate: tournamentForm.startDateTime.toISOString(),
-          skillLevel: tournamentForm.skillLevel,
+          ageGroup: tournamentForm.ageGroup,
           maxPlayers: parseInt(tournamentForm.maxPlayers),
           isPublic: tournamentForm.isPublic,
           registrationDeadline: tournamentForm.registrationDeadline.toISOString()
@@ -86,34 +137,8 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
         throw new Error(errorData.error || 'Failed to create tournament');
       }
 
-      const result = await response.json();
-      
-      Alert.alert(
-        'Success', 
-        'Tournament created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onSubmit(tournamentForm);
-              // Reset form
-              setTournamentForm({
-                title: '',
-                description: '',
-                locationName: '',
-                latitude: undefined,
-                longitude: undefined,
-                maxPlayers: '',
-                skillLevel: 'ALL_LEVELS',
-                isPublic: true,
-                startDateTime: new Date(),
-                registrationDeadline: new Date()
-              });
-            }
-          }
-        ]
-      );
-
+      onSubmit(tournamentForm);
+      resetForm();
     } catch (error) {
       console.error('Create tournament error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create tournament';
@@ -132,11 +157,8 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
       <View style={styles.modalContainer}>
         {/* Header */}
         <View style={styles.modalHeader}>
-          <TouchableOpacity 
-            onPress={onClose}
-            style={styles.backButton}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color={Colors.app.text} />
           </TouchableOpacity>
           <Text style={styles.modalTitle}>Create Tournament</Text>
           <View style={styles.placeholder} />
@@ -150,6 +172,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             onChangeText={(text) => setTournamentForm(prev => ({ ...prev, title: text }))}
             placeholder="Enter tournament name"
             required
+            error={errors.title}
           />
 
           <FormInput
@@ -162,20 +185,31 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             style={styles.textArea}
           />
 
+          <FormInput
+            label="Location Name *"
+            value={tournamentForm.locationName}
+            onChangeText={(text) => setTournamentForm(prev => ({ ...prev, locationName: text }))}
+            placeholder="Enter location name"
+            error={errors.locationName}
+          />
+
           <View style={styles.formGroup}>
             <Text style={styles.label}>Location *</Text>
-            <TouchableOpacity
-              style={styles.locationButton}
-              onPress={() => setShowMapPicker(true)}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="map-marker" size={20} color="#00E6FF" />
-              <Text style={styles.locationButtonText}>
-                {tournamentForm.locationName || 'Select location on map'}
-              </Text>
-              <MaterialCommunityIcons name="chevron-right" size={20} color="#888" />
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[styles.locationButton, errors.mapLocation && styles.inputError]}
+                onPress={() => setShowMapPicker(true)}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="map-marker" size={20} color="#00E6FF" />
+                <Text style={styles.locationButtonText}>
+                  {tournamentForm.latitude && tournamentForm.longitude
+                    ? `Location (${tournamentForm.latitude.toFixed(4)}, ${tournamentForm.longitude.toFixed(4)})`
+                    : 'Select location on map'}
+                </Text>
+                <MaterialCommunityIcons name="chevron-right" size={20} color="#888" />
+              </TouchableOpacity>
+              {errors.mapLocation && <Text style={styles.errorText}>{errors.mapLocation}</Text>}
+            </View>
 
           <FormInput
             label="Max Players"
@@ -184,19 +218,22 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             placeholder="Enter max players (e.g., 16)"
             keyboardType="numeric"
             required
+            error={errors.maxPlayers}
           />
 
           <DropdownSelect
-            label="Skill Level"
-            value={tournamentForm.skillLevel}
-            options={SKILL_LEVELS as any}
-            onValueChange={(value) => setTournamentForm(prev => ({ ...prev, skillLevel: value as any }))}
+            label="Age Group"
+            value={tournamentForm.ageGroup}
+            options={AGE_GROUPS as any}
+            onValueChange={(value) => setTournamentForm(prev => ({ ...prev, ageGroup: value as any }))}
           />
 
           <ToggleSwitch
-            label={tournamentForm.isPublic ? 'Public Tournament' : 'Private Tournament'}
+            label="Tournament Privacy"
             value={tournamentForm.isPublic}
             onValueChange={(value) => setTournamentForm(prev => ({ ...prev, isPublic: value }))}
+            textOn="Public"
+            textOff="Private"
           />
 
           <CustomDateTimePicker
@@ -204,6 +241,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             value={tournamentForm.startDateTime}
             onValueChange={(date) => setTournamentForm(prev => ({ ...prev, startDateTime: date }))}
             required
+            error={errors.startDateTime}
           />
 
           <CustomDateTimePicker
@@ -211,6 +249,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             value={tournamentForm.registrationDeadline}
             onValueChange={(date) => setTournamentForm(prev => ({ ...prev, registrationDeadline: date }))}
             required
+            error={errors.registrationDeadline}
           />
         </ScrollView>
 
@@ -218,7 +257,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
         <View style={styles.modalFooter}>
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={onClose}
+            onPress={handleCancel}
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
@@ -242,8 +281,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
           setTournamentForm(prev => ({
             ...prev,
             latitude,
-            longitude,
-            locationName: `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
+            longitude
           }));
           setShowMapPicker(false);
         }}
@@ -260,7 +298,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: Colors.app.background,
-    paddingTop: 40,
+    paddingTop: 60,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -285,6 +323,7 @@ const styles = StyleSheet.create({
   formContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    paddingTop: 15,
   },
   textArea: {
     minHeight: 80,
@@ -295,7 +334,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 30,
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: Colors.app.border,
   },
@@ -328,9 +368,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    color: Colors.app.text,
-    fontSize: 16,
-    fontWeight: '600',
+    color: Colors.app.textSecondary,
+    fontSize: 14,
     marginBottom: 8,
   },
   locationButton: {
@@ -348,6 +387,15 @@ const styles = StyleSheet.create({
     color: Colors.app.text,
     fontSize: 16,
     marginLeft: 12,
+  },
+  inputError: {
+    borderColor: Colors.app.error,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
   },
 });
 

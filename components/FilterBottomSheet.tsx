@@ -1,3 +1,4 @@
+import { AGE_GROUPS, FilterState, SKILL_LEVELS } from '@/types/tournament';
 import React from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -7,28 +8,10 @@ const STATUS_FILTERS = [
   { label: 'Completed', value: 'COMPLETED' },
 ];
 
-const SKILL_FILTERS = [
-  { label: 'Beginner', value: 'BEGINNER' },
-  { label: 'Intermediate', value: 'INTERMEDIATE' },
-  { label: 'Advanced', value: 'ADVANCED' },
-];
-
 interface FilterBottomSheetProps {
   visible: boolean;
-  pendingFilters: {
-    status: string | null;
-    skillLevel: string | null;
-    startDateFrom: string | null;
-    startDateTo: string | null;
-    maxPlayersFrom: number | null;
-    maxPlayersTo: number | null;
-    spotsLeftFrom: number | null;
-    spotsLeftTo: number | null;
-    registrationDeadlineFrom: string | null;
-    registrationDeadlineTo: string | null;
-    distance: number | null;
-  };
-  setPendingFilters: React.Dispatch<React.SetStateAction<FilterBottomSheetProps['pendingFilters']>>;
+  pendingFilters: FilterState;
+  setPendingFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   onDone: () => void;
   onClose: () => void;
 }
@@ -60,17 +43,33 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({ visible, pendingF
             ))}
           </View>
           <Text style={styles.sheetGroupTitle}>Skill Level</Text>
-          <View style={styles.sheetChipsRow}>
-            {SKILL_FILTERS.map(filter => (
-              <TouchableOpacity
-                key={filter.value}
-                style={[styles.sheetChip, pendingFilters.skillLevel === filter.value ? styles.sheetChipActive : styles.sheetChipInactive]}
-                onPress={() => setPendingFilters(f => ({ ...f, skillLevel: f.skillLevel === filter.value ? null : filter.value }))}
-              >
-                <Text style={[styles.sheetChipText, pendingFilters.skillLevel === filter.value ? styles.sheetChipTextActive : styles.sheetChipTextInactive]}>{filter.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollView}>
+            <View style={styles.sheetChipsRow}>
+              {SKILL_LEVELS.map(filter => (
+                <TouchableOpacity
+                  key={filter.value}
+                  style={[styles.sheetChip, pendingFilters.skillLevel === filter.value ? styles.sheetChipActive : styles.sheetChipInactive]}
+                  onPress={() => setPendingFilters(f => ({ ...f, skillLevel: f.skillLevel === filter.value ? null : filter.value }))}
+                >
+                  <Text style={[styles.sheetChipText, pendingFilters.skillLevel === filter.value ? styles.sheetChipTextActive : styles.sheetChipTextInactive]}>{filter.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+          <Text style={styles.sheetGroupTitle}>Age Group</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollView}>
+            <View style={styles.sheetChipsRow}>
+              {AGE_GROUPS.map(filter => (
+                <TouchableOpacity
+                  key={filter.value}
+                  style={[styles.sheetChip, pendingFilters.ageGroup === filter.value ? styles.sheetChipActive : styles.sheetChipInactive]}
+                  onPress={() => setPendingFilters(f => ({ ...f, ageGroup: f.ageGroup === filter.value ? null : filter.value }))}
+                >
+                  <Text style={[styles.sheetChipText, pendingFilters.ageGroup === filter.value ? styles.sheetChipTextActive : styles.sheetChipTextInactive]}>{filter.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
           {/* Start Date */}
           <Text style={styles.sheetGroupTitle}>Start Date (YYYY-MM-DD)</Text>
           <View style={styles.sheetInputsRow}>
@@ -193,11 +192,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sheetGroupTitle: {
-    color: '#A0A4B8',
-    fontWeight: '600',
-    fontSize: 14,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 8,
-    marginTop: 12,
+  },
+  chipsScrollView: {
+    marginBottom: 8,
   },
   sheetChipsRow: {
     flexDirection: 'row',

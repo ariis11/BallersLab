@@ -16,6 +16,7 @@ router.post('/create', auth, validate(tournamentSchemas.create), async (req, res
       longitude,
       startDate,
       skillLevel,
+      ageGroup,
       maxPlayers,
       isPublic,
       registrationDeadline
@@ -30,6 +31,7 @@ router.post('/create', auth, validate(tournamentSchemas.create), async (req, res
         longitude: parseFloat(longitude),
         startDate: new Date(startDate),
         skillLevel,
+        ageGroup,
         maxPlayers: parseInt(maxPlayers),
         isPublic: isPublic !== undefined ? isPublic : true,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
@@ -103,6 +105,7 @@ router.get('/list', async (req, res) => {
       limit = 10,
       status,
       skillLevel,
+      ageGroup,
       location,
       search,
       sortBy = 'startDate',
@@ -135,6 +138,10 @@ router.get('/list', async (req, res) => {
 
     if (skillLevel) {
       where.skillLevel = skillLevel;
+    }
+
+    if (ageGroup) {
+      where.ageGroup = ageGroup;
     }
 
     if (location) {

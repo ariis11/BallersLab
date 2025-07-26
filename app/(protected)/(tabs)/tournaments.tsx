@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
+import { FilterState } from '@/types/tournament';
 import { convertLocalDateToUTC } from '@/utils/dateUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -10,21 +11,10 @@ import FilterBottomSheet from '../../../components/FilterBottomSheet';
 import TournamentCard from '../../../components/TournamentCard';
 
 // Extended filter state
-const initialFilters: {
-  status: string | null;
-  skillLevel: string | null;
-  startDateFrom: string | null;
-  startDateTo: string | null;
-  maxPlayersFrom: number | null;
-  maxPlayersTo: number | null;
-  spotsLeftFrom: number | null;
-  spotsLeftTo: number | null;
-  registrationDeadlineFrom: string | null;
-  registrationDeadlineTo: string | null;
-  distance: number | null;
-} = {
+const initialFilters: FilterState = {
   status: null,
   skillLevel: null,
+  ageGroup: null,
   startDateFrom: null,
   startDateTo: null,
   maxPlayersFrom: null,
@@ -73,6 +63,7 @@ export default function TournamentsScreen() {
       const params: Record<string, string> = {};
       if (filters.status) params.status = filters.status;
       if (filters.skillLevel) params.skillLevel = filters.skillLevel;
+      if (filters.ageGroup) params.ageGroup = filters.ageGroup;
       if (filters.startDateFrom) params.startDateFrom = convertLocalDateToUTC(filters.startDateFrom);
       if (filters.startDateTo) params.startDateTo = convertLocalDateToUTC(filters.startDateTo, true); // End of day
       if (filters.maxPlayersFrom !== null) params.maxPlayersFrom = String(filters.maxPlayersFrom);

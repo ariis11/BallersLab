@@ -62,7 +62,8 @@ const tournamentSchemas = {
     latitude: Joi.number().min(-90).max(90).required(),
     longitude: Joi.number().min(-180).max(180).required(),
     startDate: Joi.date().greater('now').required(),
-    skillLevel: Joi.string().valid('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PROFESSIONAL', 'ALL_LEVELS').required(),
+    skillLevel: Joi.string().valid('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PROFESSIONAL', 'ALL_LEVELS').optional(),
+    ageGroup: Joi.string().valid('U12', 'U14', 'U16', 'U18', 'OVER_18', 'ALL_AGES').optional(),
     maxPlayers: Joi.number().integer().min(2).max(128).required(),
     isPublic: Joi.boolean().optional(),
     registrationDeadline: Joi.date().greater('now').optional()
@@ -77,6 +78,7 @@ const tournamentSchemas = {
     longitude: Joi.number().min(-180).max(180).optional(),
     startDate: Joi.date().greater('now').optional(),
     skillLevel: Joi.string().valid('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PROFESSIONAL', 'ALL_LEVELS').optional(),
+    ageGroup: Joi.string().valid('U12', 'U14', 'U16', 'U18', 'OVER_18', 'ALL_AGES').optional(),
     maxPlayers: Joi.number().integer().min(2).max(128).optional(),
     isPublic: Joi.boolean().optional(),
     registrationDeadline: Joi.date().greater('now').optional(),

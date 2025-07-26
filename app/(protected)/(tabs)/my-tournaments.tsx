@@ -118,7 +118,6 @@ const MyTournamentsScreen = () => {
 
   const handleCreateTournament = (tournamentData: any) => {
     // TODO: Implement API call
-    console.log('Creating tournament:', tournamentData);
     setShowCreateModal(false);
     // Refresh tournaments list
     fetchTournaments(selectedCategory);
