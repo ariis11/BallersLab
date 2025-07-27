@@ -1,4 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
+import { Tournament } from '@/types/tournament';
+import { handleTournamentAction } from '@/utils/tournamentActions';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -6,108 +8,6 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CreateTournamentModal from '../../../components/CreateTournamentModal';
 import TournamentCard from '../../../components/TournamentCard';
-
-// Active Tournament Card Component
-const ActiveTournamentCard = ({ tournament }: any) => {
-  const router = useRouter();
-
-  const handleViewBracket = () => {
-    router.push({
-      pathname: '/bracket',
-      params: { 
-        tournamentId: tournament.id
-      }
-    });
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
-        <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
-      </View>
-      <View style={styles.infoBlockV2}>
-        <Text style={styles.title}>{tournament.title}</Text>
-        <View style={styles.rowBetween}>
-          <Text style={styles.round}>{`Current Round: ${tournament.currentRound}`}</Text>
-          <TouchableOpacity 
-            style={styles.viewBracketButtonV2} 
-            activeOpacity={0.8}
-            onPress={handleViewBracket}
-          >
-            <Text style={styles.viewBracketButtonTextV2}>Bracket</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.nextMatchV2}>{`Next Match: ${tournament.nextMatch}`}</Text>
-      </View>
-    </View>
-  );
-};
-
-// Created Tournament Card Component
-const CreatedTournamentCard = ({ tournament, onEdit }: any) => {
-  const handleEdit = () => {
-    onEdit(tournament);
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
-        <MaterialCommunityIcons name="crown" size={32} color="#FFD700" />
-      </View>
-      <View style={styles.infoBlockV2}>
-        <Text style={styles.title}>{tournament.title}</Text>
-        <View style={styles.rowBetween}>
-          <Text style={styles.round}>{`${tournament.currentPlayers || 0}/${tournament.maxPlayers} Players`}</Text>
-          <TouchableOpacity 
-            style={styles.viewBracketButtonV2} 
-            activeOpacity={0.8}
-            onPress={handleEdit}
-          >
-            <Text style={styles.viewBracketButtonTextV2}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.nextMatchV2}>{`Start Date: ${new Date(tournament.startDate).toLocaleDateString()}`}</Text>
-      </View>
-    </View>
-  );
-};
-
-// Finished Tournament Card Component
-const FinishedTournamentCard = ({ tournament, user }: any) => {
-  const router = useRouter();
-
-  const handleViewBracket = () => {
-    router.push({
-      pathname: '/bracket',
-      params: { 
-        tournamentId: tournament.id
-      }
-    });
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
-      <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
-        {/* <MaterialCommunityIcons name="trophy" size={32} color="#00E6FF" /> */}
-      </View>
-      <View style={styles.infoBlockV2}>
-        <Text style={styles.title}>{tournament.title}</Text>
-        <View style={styles.rowBetween}>
-          <Text style={styles.round}>{`Final Position: 1st`}</Text>
-          <TouchableOpacity 
-            style={styles.viewBracketButtonV2} 
-            activeOpacity={0.8}
-            onPress={handleViewBracket}
-          >
-            <Text style={styles.viewBracketButtonTextV2}>Results</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.nextMatchV2}>{`Tournament Date: ${new Date(tournament.startDate).toLocaleDateString()}`}</Text>
-      </View>
-    </View>
-  );
-};
 
 const CATEGORIES = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -123,14 +23,15 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/my-tour
 const MyTournamentsScreen = () => {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('upcoming');
-  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Create tournament modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTournament, setEditingTournament] = useState<any>(null);
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
 
   // Dummy refresh function (replace with real refetch if needed)
   const refreshTournaments = () => fetchTournaments(selectedCategory);
@@ -156,19 +57,6 @@ const MyTournamentsScreen = () => {
     setLoading(false);
   }
 
-  // Dummy data for finished/created for now
-  const DUMMY_TOURNAMENTS: Record<CategoryKey, { id: string; name: string }[]> = {
-    upcoming: [],
-    active: [],
-    finished: [
-      { id: '5', name: 'Finished Tournament 1' },
-    ],
-    created: [
-      { id: '6', name: 'Created Tournament 1' },
-    ],
-  };
-
-
   const handleCreateTournament = (tournamentData: any) => {
     // TODO: Implement API call
     setShowCreateModal(false);
@@ -176,7 +64,7 @@ const MyTournamentsScreen = () => {
     fetchTournaments(selectedCategory);
   };
 
-  const handleEditTournament = (tournament: any) => {
+  const handleEditTournament = (tournament: Tournament) => {
     setEditingTournament(tournament);
     setShowEditModal(true);
   };
@@ -186,6 +74,16 @@ const MyTournamentsScreen = () => {
     setEditingTournament(null);
     // Refresh tournaments list
     fetchTournaments(selectedCategory);
+  };
+
+  const handleTournamentActionWrapper = async (action: string, tournament: Tournament) => {
+    await handleTournamentAction({ 
+      action, 
+      tournament, 
+      router,
+      onEdit: handleEditTournament 
+    });
+    refreshTournaments();
   };
 
   return (
@@ -234,13 +132,37 @@ const MyTournamentsScreen = () => {
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             selectedCategory === 'active' ? (
-              <ActiveTournamentCard tournament={item} />
+              <TournamentCard 
+                tournament={item} 
+                user={user} 
+                variant="active"
+                onAction={handleTournamentActionWrapper}
+                refreshTournaments={refreshTournaments}
+              />
             ) : selectedCategory === 'upcoming' ? (
-              <TournamentCard item={item} index={0} user={user} refreshTournaments={refreshTournaments} />
+              <TournamentCard 
+                tournament={item} 
+                user={user} 
+                variant="upcoming"
+                onAction={handleTournamentActionWrapper}
+                refreshTournaments={refreshTournaments}
+              />
             ) : selectedCategory === 'finished' ? (
-              <FinishedTournamentCard tournament={item} user={user} />
+              <TournamentCard 
+                tournament={item} 
+                user={user} 
+                variant="finished"
+                onAction={handleTournamentActionWrapper}
+                refreshTournaments={refreshTournaments}
+              />
             ) : selectedCategory === 'created' ? (
-              <CreatedTournamentCard tournament={item} onEdit={handleEditTournament} />
+              <TournamentCard 
+                tournament={item} 
+                user={user} 
+                variant="created"
+                onAction={handleTournamentActionWrapper}
+                refreshTournaments={refreshTournaments}
+              />
             ) : (
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
@@ -277,7 +199,7 @@ const MyTournamentsScreen = () => {
         initialData={editingTournament ? {
           title: editingTournament.title,
           description: editingTournament.description || '',
-          locationName: editingTournament.locationName,
+          locationName: editingTournament.locationName || '',
           latitude: editingTournament.latitude,
           longitude: editingTournament.longitude,
           maxPlayers: editingTournament.maxPlayers?.toString() || '',

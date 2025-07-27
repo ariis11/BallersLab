@@ -1,6 +1,9 @@
 import { useAuth } from '@/hooks/useAuth';
-import { FilterState } from '@/types/tournament';
+import { useTournamentFilters } from '@/hooks/useTournamentFilters';
+import { useTournamentSorting } from '@/hooks/useTournamentSorting';
+import { Tournament } from '@/types/tournament';
 import { convertLocalDateToUTC } from '@/utils/dateUtils';
+import { handleTournamentAction } from '@/utils/tournamentActions';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
@@ -12,44 +15,35 @@ import JoinByCodeModal from '../../../components/JoinByCodeModal';
 import SortBottomSheet from '../../../components/SortBottomSheet';
 import TournamentCard from '../../../components/TournamentCard';
 
-// Extended filter state
-const initialFilters: FilterState = {
-  status: null,
-  skillLevel: null,
-  ageGroup: null,
-  startDateFrom: null,
-  startDateTo: null,
-  maxPlayersFrom: null,
-  maxPlayersTo: null,
-  spotsLeftFrom: null,
-  spotsLeftTo: null,
-  registrationDeadlineFrom: null,
-  registrationDeadlineTo: null,
-  distance: null,
-};
-
-interface SortOption {
-  label: string;
-  value: string;
-  order: 'asc' | 'desc';
-}
-
 export default function TournamentsScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeFilters, setActiveFilters] = useState(initialFilters);
-  const [showFilterSheet, setShowFilterSheet] = useState(false);
-  const [pendingFilters, setPendingFilters] = useState(initialFilters);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
-  // Join by code modal state
+  // Use custom hooks
+  const { filters: activeFilters, updateFilter, clearFilters, hasActiveFilters } = useTournamentFilters();
+  const { sortState, updateSort, sortTournaments: sortTournamentsList } = useTournamentSorting();
+  
+  // Modal states
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState(activeFilters);
   const [showJoinModal, setShowJoinModal] = useState(false);
-
-  // Sort state
   const [showSortSheet, setShowSortSheet] = useState(false);
-  const [currentSort, setCurrentSort] = useState<SortOption | null>(null);
+  
+  // Convert sortState to SortBottomSheet format
+  const currentSort = sortState.field ? {
+    label: `${sortState.field} ${sortState.direction === 'asc' ? '↑' : '↓'}`,
+    value: sortState.field,
+    order: sortState.direction
+  } : null;
+  
+  const handleSortChange = (sort: any) => {
+    if (sort) {
+      updateSort(sort.value);
+    }
+  };
 
   // Helper to get user location if distance filter is set
   const ensureUserLocation = async () => {
@@ -94,15 +88,16 @@ export default function TournamentsScreen() {
       }
       
       // Add sort parameters
-      if (currentSort) {
-        params.sortBy = currentSort.value;
-        params.sortOrder = currentSort.order;
+      if (sortState.field) {
+        params.sortBy = sortState.field;
+        params.sortOrder = sortState.direction;
       }
       
       url += Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
       const res = await fetch(url);
       const data = await res.json();
-      setTournaments(data.tournaments || []);
+      const sortedTournaments = sortTournamentsList(data.tournaments || []);
+      setTournaments(sortedTournaments);
     } catch (e) {
       setTournaments([]);
     }
@@ -111,7 +106,7 @@ export default function TournamentsScreen() {
 
   useEffect(() => {
     fetchTournaments();
-  }, [activeFilters, currentSort]);
+  }, [activeFilters, sortState]);
 
   // Open filter sheet, copy current filters to pending
   const openFilterSheet = () => {
@@ -121,24 +116,25 @@ export default function TournamentsScreen() {
 
   // Apply filters from sheet
   const applyFilters = () => {
-    setActiveFilters(pendingFilters);
+    // Update filters using the hook's updateFilter method
+    Object.entries(pendingFilters).forEach(([key, value]) => {
+      updateFilter(key as keyof typeof activeFilters, value);
+    });
     setShowFilterSheet(false);
   };
 
   // Remove a filter from active row
-  const removeFilter = (key: keyof typeof initialFilters) => {
-    setActiveFilters(filters => ({ ...filters, [key]: null }));
+  const removeFilter = (key: keyof typeof activeFilters) => {
+    updateFilter(key, null);
   };
 
   // Add a refreshTournaments function for child components
   const refreshTournaments = () => fetchTournaments();
 
-  // Check if there are any active filters
-  const hasActiveFilters = Object.values(activeFilters).some(value => 
-    value !== null && value !== undefined && value !== ''
-  );
-
-
+  const handleTournamentActionWrapper = async (action: string, tournament: Tournament) => {
+    await handleTournamentAction({ action, tournament });
+    refreshTournaments();
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
@@ -162,7 +158,7 @@ export default function TournamentsScreen() {
       </View>
 
       {/* Active Filters Row */}
-      {hasActiveFilters && (
+      {hasActiveFilters() && (
         <ActiveFiltersRow activeFilters={activeFilters} onRemove={removeFilter} />
       )}
 
@@ -172,9 +168,15 @@ export default function TournamentsScreen() {
       ) : (
         <FlatList
           data={tournaments}
-          keyExtractor={(item: any) => item.id}
-          renderItem={({ item, index }: { item: any, index: number }) => (
-            <TournamentCard item={item} index={index} user={user} refreshTournaments={refreshTournaments} />
+          keyExtractor={(item: Tournament) => item.id}
+          renderItem={({ item, index }: { item: Tournament, index: number }) => (
+            <TournamentCard 
+              tournament={item} 
+              user={user} 
+              variant="upcoming"
+              onAction={handleTournamentActionWrapper}
+              refreshTournaments={refreshTournaments}
+            />
           )}
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={() => fetchTournaments()} />
@@ -204,7 +206,7 @@ export default function TournamentsScreen() {
       <SortBottomSheet
         visible={showSortSheet}
         currentSort={currentSort}
-        onSortChange={setCurrentSort}
+        onSortChange={handleSortChange}
         onClose={() => setShowSortSheet(false)}
       />
     </View>

@@ -1,74 +1,146 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { CARD_VARIANTS, TournamentCardVariant } from '../types/tournament';
 import { formatTournamentDate } from '../utils/dateUtils';
 
 interface TournamentCardProps {
-  item: any;
-  index: number;
+  tournament: any;
   user: any;
-  refreshTournaments: () => void;
+  variant: TournamentCardVariant;
+  onAction: (action: string, tournament: any) => void;
+  refreshTournaments?: () => void;
 }
 
-const TournamentCard: React.FC<TournamentCardProps> = ({ item, index, user, refreshTournaments }) => {
+const TournamentCard: React.FC<TournamentCardProps> = ({ 
+  tournament, 
+  user, 
+  variant, 
+  onAction,
+  refreshTournaments 
+}) => {
   const [loading, setLoading] = useState(false);
-  // Determine if the user is a participant
-  const isParticipant = user && item.participants && item.participants.some((p: any) => p.userId === user.id);
-  const canJoinOrLeave = item.status === 'REGISTRATION_OPEN';
+  const variantConfig = CARD_VARIANTS[variant];
 
-  const handleJoinLeave = async () => {
-    if (!user) return;
+  const handleAction = async (action: string) => {
+    if (action === 'disabled') return;
+    
     setLoading(true);
     try {
-              const endpoint = isParticipant
-          ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/leave/${item.id}`
-          : `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/join/${item.id}`;
-      const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      await refreshTournaments();
-    } catch (e) {}
-    setLoading(false);
+      await onAction(action, tournament);
+      if (refreshTournaments) {
+        await refreshTournaments();
+      }
+    } catch (error) {
+      console.error('Action failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const getTextContent = (key: string) => {
+    switch (key) {
+      case 'title':
+        return tournament.title;
+      case 'players':
+        return `${tournament.currentPlayers}/${tournament.maxPlayers} Players`;
+      case 'date':
+        return formatTournamentDate(tournament.startDate);
+      case 'round':
+        return `Current Round: ${tournament.currentRound || '1'}`;
+      case 'nextMatch':
+        return `Next Match: ${tournament.nextMatch || 'TBD'}`;
+      case 'startDate':
+        return `Start Date: ${new Date(tournament.startDate).toLocaleDateString()}`;
+      case 'position':
+        return 'Final Position: 1st Place'; // This will be dynamic when we implement final positions
+      case 'completed':
+        return formatTournamentDate(tournament.startDate);
+      default:
+        return '';
+    }
+  };
+
+  const getTextStyle = (styleKey: string) => {
+    switch (styleKey) {
+      case 'title':
+        return styles.title;
+      case 'subtitle':
+        return styles.subtitle;
+      case 'info':
+        return styles.info;
+      default:
+        return styles.title;
+    }
+  };
+
+  const getButtonStyle = (styleKey: string) => {
+    switch (styleKey) {
+      case 'primary':
+        return styles.primaryButton;
+      case 'secondary':
+        return styles.secondaryButton;
+      case 'disabled':
+        return styles.disabledButton;
+      default:
+        return styles.primaryButton;
+    }
+  };
+
+  const getButtonTextStyle = (styleKey: string) => {
+    switch (styleKey) {
+      case 'primary':
+        return styles.primaryButtonText;
+      case 'secondary':
+        return styles.secondaryButtonText;
+      case 'disabled':
+        return styles.disabledButtonText;
+      default:
+        return styles.primaryButtonText;
+    }
+  };
+
+  const buttonConfig = variantConfig.getButtonConfig(tournament, user);
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardLeft}>
-        <View style={styles.iconCircle}>
-          <MaterialCommunityIcons name="basketball" size={32} color="#00E6FF" />
-        </View>
-        <View>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.players}>{item.currentPlayers}/{item.maxPlayers} Players</Text>
-          <Text style={styles.date}>{formatTournamentDate(item.startDate)}</Text>
-          <Text style={styles.date}>{formatTournamentDate(item.registrationDeadline)}</Text>
-        </View>
+      <View style={[styles.iconCircle, { borderColor: variantConfig.iconColor }]}>
+        <MaterialCommunityIcons 
+          name={variantConfig.icon as any} 
+          size={32} 
+          color={variantConfig.iconColor} 
+        />
       </View>
-      {canJoinOrLeave ? (
-        <TouchableOpacity
-          style={isParticipant ? styles.unjoinButton : styles.joinButton}
-          activeOpacity={0.8}
-          onPress={handleJoinLeave}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={isParticipant ? '#101426' : '#181C2E'} />
-          ) : (
-            <Text style={isParticipant ? styles.unjoinButtonText : styles.joinButtonText}>
-              {isParticipant ? 'Leave' : 'Join'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      ) : (
-        <View style={[styles.closedButton, { opacity: 0.7 }]}> 
-          <Text style={styles.closedButtonText}>Closed</Text>
+      <View style={styles.infoBlock}>
+        <Text style={getTextStyle('title')} numberOfLines={1} ellipsizeMode="tail">
+          {getTextContent('title')}
+        </Text>
+        <View style={styles.rowBetween}>
+          <Text style={getTextStyle('subtitle')} numberOfLines={1} ellipsizeMode="tail">
+            {getTextContent(variantConfig.textLines[1].key)}
+          </Text>
+          <TouchableOpacity
+            style={[getButtonStyle(buttonConfig.style), loading && styles.buttonLoading]}
+            activeOpacity={0.8}
+            onPress={() => handleAction(buttonConfig.action)}
+            disabled={loading || buttonConfig.action === 'disabled'}
+          >
+            {loading ? (
+              <ActivityIndicator 
+                size="small" 
+                color={buttonConfig.style === 'secondary' ? '#101426' : '#181C2E'} 
+              />
+            ) : (
+              <Text style={getButtonTextStyle(buttonConfig.style)}>
+                {buttonConfig.text}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
-      )}
+        <Text style={getTextStyle('info')} numberOfLines={2} ellipsizeMode="tail">
+          {getTextContent(variantConfig.textLines[2].key)}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -81,17 +153,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
   },
   iconCircle: {
     width: 48,
@@ -100,9 +166,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#101426',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 16,
     borderWidth: 2,
     borderColor: '#00E6FF',
+  },
+  infoBlock: {
+    flex: 1,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   title: {
     color: '#fff',
@@ -110,50 +184,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 4,
   },
-  players: {
+  subtitle: {
     color: '#A0A4B8',
     fontSize: 14,
     marginBottom: 2,
+    flex: 1,
+    marginRight: 8,
   },
-  date: {
+  info: {
     color: '#00E6FF',
     fontSize: 12,
     fontWeight: '500',
   },
-  joinButton: {
+  primaryButton: {
     backgroundColor: '#00E6FF',
     borderRadius: 16,
     paddingHorizontal: 22,
     paddingVertical: 8,
+    flexShrink: 0,
   },
-  joinButtonText: {
+  primaryButtonText: {
     color: '#101426',
     fontWeight: 'bold',
     fontSize: 15,
   },
-  unjoinButton: {
+  secondaryButton: {
     backgroundColor: '#fff',
     borderRadius: 16,
     paddingHorizontal: 22,
     paddingVertical: 8,
+    flexShrink: 0,
   },
-  unjoinButtonText: {
+  secondaryButtonText: {
     color: '#101426',
     fontWeight: 'bold',
     fontSize: 15,
   },
-  closedButton: {
+  disabledButton: {
     backgroundColor: '#23263A',
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    opacity: 0.7,
+    flexShrink: 0,
   },
-  closedButtonText: {
+  disabledButtonText: {
     color: '#A0A4B8',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  buttonLoading: {
+    opacity: 0.7,
   },
 });
 

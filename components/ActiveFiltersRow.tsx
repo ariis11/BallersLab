@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     minHeight: 32,
     marginBottom: 16,
+    maxHeight: 32,
   },
   filtersChipsRow: {
     flexDirection: 'row',

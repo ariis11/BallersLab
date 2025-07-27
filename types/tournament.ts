@@ -54,4 +54,142 @@ export interface FilterState {
   registrationDeadlineFrom: string | null;
   registrationDeadlineTo: string | null;
   distance: number | null;
-} 
+}
+
+// Tournament Card Configuration Types
+export interface TextLineConfig {
+  key: string;
+  style: 'title' | 'subtitle' | 'info';
+}
+
+export interface ButtonConfig {
+  text: string;
+  style: 'primary' | 'secondary' | 'disabled';
+  action: string;
+}
+
+export interface CardVariantConfig {
+  icon: string;
+  iconColor: string;
+  textLines: TextLineConfig[];
+  getButtonConfig: (tournament: any, user: any) => ButtonConfig;
+}
+
+export type TournamentCardVariant = 'upcoming' | 'active' | 'finished' | 'created';
+
+// Tournament Data Types
+export interface Tournament {
+  id: string;
+  title: string;
+  name?: string; // For backward compatibility
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  registrationDeadline: string;
+  maxPlayers: number;
+  currentPlayers?: number;
+  status: 'REGISTRATION_OPEN' | 'IN_PROGRESS' | 'COMPLETED';
+  skillLevel?: SkillLevel;
+  ageGroup?: AgeGroup;
+  location?: string;
+  locationName?: string; // For backward compatibility
+  latitude?: number;
+  longitude?: number;
+  participants?: TournamentParticipant[];
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isPublic?: boolean;
+}
+
+export interface TournamentParticipant {
+  id: string;
+  userId: string;
+  tournamentId: string;
+  joinedAt: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+  };
+}
+
+// Tournament Card Configuration
+export const CARD_VARIANTS: Record<TournamentCardVariant, CardVariantConfig> = {
+  upcoming: {
+    icon: 'trophy',
+    iconColor: '#FFD700',
+    textLines: [
+      { key: 'title', style: 'title' },
+      { key: 'players', style: 'subtitle' },
+      { key: 'date', style: 'info' }
+    ],
+    getButtonConfig: (tournament: any, user: any) => {
+      const isParticipant = user && tournament.participants && 
+        tournament.participants.some((p: any) => p.userId === user.id);
+      const canJoinOrLeave = tournament.status === 'REGISTRATION_OPEN';
+
+      if (!canJoinOrLeave) {
+        return {
+          text: 'Closed',
+          style: 'disabled',
+          action: 'disabled'
+        };
+      }
+
+      return {
+        text: isParticipant ? 'Leave' : 'Join',
+        style: isParticipant ? 'secondary' : 'primary',
+        action: isParticipant ? 'leave' : 'join'
+      };
+    }
+  },
+  active: {
+    icon: 'trophy',
+    iconColor: '#FFD700',
+    textLines: [
+      { key: 'title', style: 'title' },
+      { key: 'round', style: 'subtitle' },
+      { key: 'nextMatch', style: 'info' }
+    ],
+    getButtonConfig: (tournament: any, user: any) => {
+      return {
+        text: 'Bracket',
+        style: 'primary',
+        action: 'viewBracket'
+      };
+    }
+  },
+  finished: {
+    icon: 'trophy',
+    iconColor: '#FFD700',
+    textLines: [
+      { key: 'title', style: 'title' },
+      { key: 'position', style: 'subtitle' },
+      { key: 'completed', style: 'info' }
+    ],
+    getButtonConfig: (tournament: any, user: any) => {
+      return {
+        text: 'Results',
+        style: 'primary',
+        action: 'viewResults'
+      };
+    }
+  },
+  created: {
+    icon: 'trophy',
+    iconColor: '#FFD700',
+    textLines: [
+      { key: 'title', style: 'title' },
+      { key: 'players', style: 'subtitle' },
+      { key: 'date', style: 'info' }
+    ],
+    getButtonConfig: (tournament: any, user: any) => {
+      return {
+        text: 'Edit',
+        style: 'primary',
+        action: 'edit'
+      };
+    }
+  }
+}; 
