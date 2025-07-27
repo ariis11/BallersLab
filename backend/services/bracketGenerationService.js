@@ -38,8 +38,12 @@ class BracketGenerationService {
         throw new Error('Need at least 2 players to generate bracket');
       }
 
-      // Calculate rounds needed
-      const totalRounds = this.calculateRounds(playerCount);
+      // Calculate bracket structure
+      const totalSlots = Math.pow(2, Math.ceil(Math.log2(playerCount)));
+      const totalRounds = Math.log2(totalSlots);
+      const totalByes = totalSlots - playerCount;
+
+      console.log(`Generating bracket: ${playerCount} players, ${totalSlots} slots, ${totalByes} byes, ${totalRounds} rounds`);
 
       // Create bracket
       const bracket = await prisma.tournamentBracket.create({
@@ -53,8 +57,8 @@ class BracketGenerationService {
       // Create all matches for all rounds
       await this.createAllMatches(bracket.id, totalRounds);
 
-      // Seed players into first round
-      await this.seedPlayers(bracket.id, participants);
+      // Seed players into first round with proper bye handling
+      await this.seedPlayersWithByes(bracket.id, participants, totalByes);
 
       // Update tournament
       await prisma.tournament.update({
@@ -64,6 +68,7 @@ class BracketGenerationService {
         }
       });
 
+      console.log(`Bracket generated successfully for tournament ${tournamentId}`);
       return bracket;
     } catch (error) {
       console.error('Error generating bracket:', error);
@@ -72,18 +77,11 @@ class BracketGenerationService {
   }
 
   /**
-   * Calculate number of rounds needed based on player count
-   */
-  calculateRounds(playerCount) {
-    return Math.ceil(Math.log2(playerCount));
-  }
-
-  /**
    * Create all matches for all rounds
    */
   async createAllMatches(bracketId, totalRounds) {
     const matches = [];
-    let matchNumber = 1; // Start with 1 and increment continuously
+    let matchNumber = 1;
 
     for (let round = 1; round <= totalRounds; round++) {
       const matchesInRound = Math.pow(2, totalRounds - round);
@@ -148,9 +146,9 @@ class BracketGenerationService {
   }
 
   /**
-   * Seed players into first round matches
+   * Seed players with proper bye handling
    */
-  async seedPlayers(bracketId, participants) {
+  async seedPlayersWithByes(bracketId, participants, totalByes) {
     const firstRoundMatches = await prisma.bracketMatch.findMany({
       where: {
         bracketId,
@@ -159,53 +157,158 @@ class BracketGenerationService {
       orderBy: { matchNumber: 'asc' }
     });
 
-    // Shuffle participants for random seeding
-    const shuffledParticipants = this.shuffleArray([...participants]);
+    // Sort participants by registration date (first come, first served for seeding)
+    // In a real system, you might want to use skill ratings or previous tournament performance
+    const sortedPlayers = this.shuffleArray([...participants]);
 
-    // Create seeds and assign players to first round matches
-    for (let i = 0; i < shuffledParticipants.length; i += 2) {
-      const matchIndex = Math.floor(i / 2);
-      if (matchIndex < firstRoundMatches.length) {
-        const match = firstRoundMatches[matchIndex];
-        const player1 = shuffledParticipants[i];
-        const player2 = shuffledParticipants[i + 1];
+    // Assign seeds to players
+    const seededPlayers = sortedPlayers.map((player, index) => ({
+      ...player,
+      seed: index + 1
+    }));
 
-        // Update match with players
-        await prisma.bracketMatch.update({
-          where: { id: match.id },
-          data: {
-            player1Id: player1.userId,
-            player2Id: player2?.userId || null,
-            status: player2 ? 'PENDING' : 'WAITING_FOR_PLAYERS'
-          }
-        });
+    // Generate correct bracket matchups
+    const totalSlots = seededPlayers.length + totalByes;
+    const matchups = this.generateCorrectBracketMatchups(totalSlots);
 
-        // Create seeds
-        await prisma.bracketSeed.create({
-          data: {
-            bracketId,
-            playerId: player1.userId,
-            seedPosition: i + 1,
-            matchId: match.id
-          }
-        });
+    console.log(`Generated matchups:`, matchups);
 
-        if (player2) {
-          await prisma.bracketSeed.create({
-            data: {
-              bracketId,
-              playerId: player2.userId,
-              seedPosition: i + 2,
-              matchId: match.id
-            }
-          });
-        }
+    // Assign players to first round matches
+    for (let i = 0; i < matchups.length; i++) {
+      const [seed1, seed2] = matchups[i];
+      const match = firstRoundMatches[i];
+
+      const player1 = seededPlayers.find(p => p.seed === seed1);
+      const player2 = seededPlayers.find(p => p.seed === seed2);
+
+      if (player1 && player2) {
+        // Both players exist - regular match
+        await this.assignPlayersToMatch(match.id, player1, player2);
+      } else if (player1) {
+        // Player1 exists, seed2 is a bye
+        await this.assignPlayerVsBye(match.id, player1);
+      } else if (player2) {
+        // Player2 exists, seed1 is a bye
+        await this.assignPlayerVsBye(match.id, player2);
       }
     }
   }
 
   /**
-   * Shuffle array for random seeding
+   * Generate correct bracket matchups using standard tournament seeding
+   */
+  generateCorrectBracketMatchups(totalSlots) {
+    const seedOrder = this.generateSeedOrder(totalSlots);
+    const matchups = [];
+
+    for (let i = 0; i < seedOrder.length; i += 2) {
+      matchups.push([seedOrder[i], seedOrder[i + 1]]);
+    }
+
+    return matchups;
+  }
+
+  /**
+   * Generate standard bracket seeding order
+   */
+  generateSeedOrder(totalSlots) {
+    if ((totalSlots & (totalSlots - 1)) !== 0) {
+      throw new Error("totalSlots must be a power of 2");
+    }
+
+    function buildSeeds(n) {
+      if (n === 1) return [1];
+      const prev = buildSeeds(n / 2);
+      const result = [];
+      for (let i = 0; i < prev.length; i++) {
+        result.push(prev[i]);
+        result.push(n + 1 - prev[i]);
+      }
+      return result;
+    }
+
+    return buildSeeds(totalSlots);
+  }
+
+  /**
+   * Assign two players to a match
+   */
+  async assignPlayersToMatch(matchId, player1, player2) {
+    await prisma.bracketMatch.update({
+      where: { id: matchId },
+      data: {
+        player1Id: player1.userId,
+        player2Id: player2.userId,
+        status: 'PENDING'
+      }
+    });
+  }
+
+  /**
+   * Assign a player vs a bye (advance player immediately)
+   */
+  async assignPlayerVsBye(matchId, player) {
+    // Update match to show player vs bye
+    await prisma.bracketMatch.update({
+      where: { id: matchId },
+      data: {
+        player1Id: player.userId,
+        player2Id: null,
+        status: 'BYE'
+      }
+    });
+
+    // Immediately advance bye player to next round
+    await this.advanceByePlayerToNextRound(matchId, player.userId);
+  }
+
+  /**
+   * Advance bye player to next round
+   */
+  async advanceByePlayerToNextRound(matchId, playerId) {
+    const match = await prisma.bracketMatch.findUnique({
+      where: { id: matchId },
+      include: { bracket: true }
+    });
+
+    if (match.nextMatchId) {
+      const nextMatch = await prisma.bracketMatch.findUnique({
+        where: { id: match.nextMatchId }
+      });
+
+      // Assign to first available slot
+      const updateData = {};
+      if (!nextMatch.player1Id) {
+        updateData.player1Id = playerId;
+      } else {
+        updateData.player2Id = playerId;
+      }
+
+      // Determine new status
+      const newPlayer1Id = updateData.player1Id || nextMatch.player1Id;
+      const newPlayer2Id = updateData.player2Id || nextMatch.player2Id;
+      const newStatus = newPlayer1Id && newPlayer2Id ? 'PENDING' : 'WAITING_FOR_PLAYERS';
+
+      await prisma.bracketMatch.update({
+        where: { id: match.nextMatchId },
+        data: { ...updateData, status: newStatus }
+      });
+
+      console.log(`Bye player ${playerId} advanced to next round match ${match.nextMatchId}`);
+    }
+  }
+
+
+
+  /**
+   * Calculate number of rounds needed based on player count (legacy method)
+   */
+  calculateRounds(playerCount) {
+    return Math.ceil(Math.log2(playerCount));
+  }
+
+  /**
+   * Shuffle array for random seeding (legacy method - not used in new implementation)
    */
   shuffleArray(array) {
     const shuffled = [...array];

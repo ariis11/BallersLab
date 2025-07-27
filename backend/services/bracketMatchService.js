@@ -41,15 +41,7 @@ class BracketMatchService {
                   }
                 }
               },
-              seeds: {
-                include: {
-                  player: {
-                    include: {
-                      profile: true
-                    }
-                  }
-                }
-              }
+
             },
             orderBy: [
               { roundNumber: 'asc' },
@@ -231,15 +223,19 @@ class BracketMatchService {
         }
       });
 
-      // Mark loser as eliminated
+      // Mark loser as eliminated and calculate points
       if (loserId) {
+        const pointsEarned = this.calculateScore(match.roundNumber);
+        
         await prisma.tournamentParticipant.updateMany({
           where: {
             userId: loserId,
             tournamentId: match.bracket.tournamentId
           },
           data: {
-            eliminatedInRound: match.roundNumber
+            eliminatedInRound: match.roundNumber,
+            points_earned: pointsEarned,
+            status: 'ELIMINATED'
           }
         });
       }
@@ -247,6 +243,9 @@ class BracketMatchService {
       // Advance winner to next round
       if (match.nextMatchId) {
         await this.advanceWinnerToNextRound(match.nextMatchId, winnerId);
+      } else {
+        // This is the final match - complete the tournament
+        await this.completeTournament(match.bracket.tournamentId, winnerId, match.roundNumber);
       }
 
       return this.getMatchDetails(matchId);
@@ -267,6 +266,11 @@ class BracketMatchService {
 
       if (!nextMatch) {
         throw new Error('Next match not found');
+      }
+
+      // Check if next match already has both players (from byes)
+      if (nextMatch.player1Id && nextMatch.player2Id) {
+        throw new Error('Next match already has both players');
       }
 
       // Determine which player slot to fill
@@ -292,11 +296,119 @@ class BracketMatchService {
           status: newStatus
         }
       });
+
+      console.log(`Winner ${winnerId} advanced to next round match ${nextMatchId}`);
     } catch (error) {
       console.error('Error advancing winner:', error);
       throw error;
     }
   }
+
+  /**
+   * Complete tournament when final match is finished
+   */
+  async completeTournament(tournamentId, winnerId, finalRoundNumber) {
+    try {
+      // Calculate points for winner
+      const winnerPoints = this.calculateScore(finalRoundNumber + 1);
+
+      // Update winner first
+      await prisma.tournamentParticipant.update({
+        where: {
+          tournamentId_userId: {
+            tournamentId,
+            userId: winnerId
+          }
+        },
+        data: {
+          status: 'WINNER',
+          finalRank: 1,
+          eliminatedInRound: null,
+          points_earned: winnerPoints
+        }
+      });
+
+      // Update tournament status
+      await prisma.tournament.update({
+        where: { id: tournamentId },
+        data: { status: 'COMPLETED' }
+      });
+
+      // Get tournament with updated participant data
+      const tournament = await prisma.tournament.findUnique({
+        where: { id: tournamentId },
+        include: {
+          participants: {
+            include: {
+              user: true
+            }
+          }
+        }
+      });
+
+      // Update user points for ALL participants (now with correct data)
+      if (tournament.ageGroup) {
+        const userPointsUpdates = [];
+        
+        for (const participant of tournament.participants) {
+          const pointsEarned = participant.points_earned || 0;
+          if (pointsEarned > 0) {
+            userPointsUpdates.push(
+              this.updateUserPoints(participant.userId, tournament.ageGroup, pointsEarned)
+            );
+          }
+        }
+
+        // Execute user points updates
+        if (userPointsUpdates.length > 0) {
+          await prisma.$transaction(userPointsUpdates);
+        }
+      }
+
+      console.log(`🏆 Tournament ${tournamentId} completed! Winner: ${winnerId} (${winnerPoints} pts)`);
+    } catch (error) {
+      console.error('Error completing tournament:', error);
+      throw error;
+    }
+  }
+
+
+
+  /**
+   * Update user points for a specific age group
+   */
+  updateUserPoints(userId, ageGroup, points) {
+    return prisma.userPoints.upsert({
+      where: {
+        userId_ageGroup: {
+          userId,
+          ageGroup
+        }
+      },
+      update: {
+        points: { increment: points },
+        tournamentsPlayed: { increment: 1 }
+      },
+      create: {
+        userId,
+        ageGroup,
+        points,
+        tournamentsPlayed: 1
+      }
+    });
+  }
+
+  /**
+   * Get point allocations based on tournament size
+   */
+  /**
+   * Calculate points based on which round a player lost
+   */
+  calculateScore(roundLostIn) {
+    return Math.round(20 * Math.pow(1.6, roundLostIn - 1));
+  }
+
+
 
   /**
    * Format bracket data for frontend
@@ -332,6 +444,18 @@ class BracketMatchService {
     const player1Submission = submissions.find(s => s.submittedBy === match.player1Id);
     const player2Submission = submissions.find(s => s.submittedBy === match.player2Id);
 
+    // Handle bye matches
+    const isByeMatch = match.status === 'BYE';
+    const player2Data = isByeMatch ? {
+      id: null,
+      name: '(Bye)',
+      avatar: null
+    } : (match.player2 ? {
+      id: match.player2.id,
+      name: match.player2.profile?.firstName || match.player2.email,
+      avatar: match.player2.profile?.avatar
+    } : null);
+
     return {
       id: match.id,
       roundNumber: match.roundNumber,
@@ -341,11 +465,7 @@ class BracketMatchService {
         name: match.player1.profile?.firstName || match.player1.email,
         avatar: match.player1.profile?.avatar
       } : null,
-      player2: match.player2 ? {
-        id: match.player2.id,
-        name: match.player2.profile?.firstName || match.player2.email,
-        avatar: match.player2.profile?.avatar
-      } : null,
+      player2: player2Data,
       status: match.status,
       winnerId: match.winnerId,
       confirmedScore1: player1Submission?.score1,

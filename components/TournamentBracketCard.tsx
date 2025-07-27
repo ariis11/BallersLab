@@ -19,8 +19,11 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
   const isPlayer1Winner = match.winnerId === match.player1?.id;
   const isPlayer2Winner = match.winnerId === match.player2?.id;
 
-  // Determine if match is running (both players assigned, not finished, not disputed)
-  const isRunning = match.player1 && match.player2 && !match.winnerId && match.status !== 'DISPUTED';
+  // Check if this is a bye match
+  const isByeMatch = match.status === 'BYE';
+
+  // Determine if match is running (both players assigned, not finished, not disputed, not bye)
+  const isRunning = match.player1 && match.player2 && !match.winnerId && match.status !== 'DISPUTED' && !isByeMatch;
   // Determine if match is disputed
   const isDisputed = match.status === 'DISPUTED';
   // Determine if match is finished
@@ -31,7 +34,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
   const player2HasSubmitted = !!match.player2Submission;
 
   // For running matches: show submit button only for participant who hasn't submitted
-  // Disable score submission for completed tournaments
+  // Disable score submission for completed tournaments and bye matches
   const canSubmitScore = isRunning && tournamentStatus !== 'COMPLETED' && (
     (isPlayer1 && !player1HasSubmitted) || (isPlayer2 && !player2HasSubmitted)
   );
@@ -91,7 +94,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
             <Text style={[styles.playerName, isPlayer1Winner && styles.winnerText]}>
               {match.player1?.name || 'TBD'}
             </Text>
-            {/* Submission icon for running matches */}
+            {/* Submission icon for running matches (not bye matches) */}
             {isRunning && match.player1 && (
               player1HasSubmitted ? (
                 <MaterialCommunityIcons name="check-circle" size={16} color="#00E6FF" style={styles.icon} />
@@ -110,7 +113,11 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
           isPlayer2Winner && styles.winnerRow
         ]}>
           <View style={styles.playerInfoRow}>
-            <Text style={[styles.playerName, isPlayer2Winner && styles.winnerText]}>
+            <Text style={[
+              styles.playerName, 
+              isPlayer2Winner && styles.winnerText,
+              isByeMatch && styles.byeText
+            ]}>
               {match.player2?.name || 'TBD'}
             </Text>
             {isRunning && match.player2 && (
@@ -259,6 +266,10 @@ const styles = StyleSheet.create({
   },
   winnerText: {
     color: '#00E6FF',
+  },
+  byeText: {
+    color: '#A0A4B8',
+    fontStyle: 'italic',
   },
   icon: {
     marginLeft: 6,
