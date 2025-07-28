@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CARD_VARIANTS, TournamentCardVariant } from '../types/tournament';
 import { formatTournamentDate } from '../utils/dateUtils';
+import TournamentInfoModal from './TournamentInfoModal';
 
 interface TournamentCardProps {
   tournament: any;
@@ -20,6 +21,7 @@ const TournamentCard: React.FC<TournamentCardProps> = ({
   refreshTournaments 
 }) => {
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const variantConfig = CARD_VARIANTS[variant];
 
   const handleAction = async (action: string) => {
@@ -36,6 +38,19 @@ const TournamentCard: React.FC<TournamentCardProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCardPress = () => {
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+  };
+
+  const handleButtonPress = (action: string) => {
+    // Prevent card press when button is pressed
+    handleAction(action);
   };
 
   const getTextContent = (key: string) => {
@@ -103,7 +118,11 @@ const TournamentCard: React.FC<TournamentCardProps> = ({
   const buttonConfig = variantConfig.getButtonConfig(tournament, user);
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={handleCardPress}
+      activeOpacity={0.9}
+    >
       <View style={[styles.iconCircle, { borderColor: variantConfig.iconColor }]}>
         <MaterialCommunityIcons 
           name={variantConfig.icon as any} 
@@ -122,7 +141,7 @@ const TournamentCard: React.FC<TournamentCardProps> = ({
           <TouchableOpacity
             style={[getButtonStyle(buttonConfig.style), loading && styles.buttonLoading]}
             activeOpacity={0.8}
-            onPress={() => handleAction(buttonConfig.action)}
+            onPress={() => handleButtonPress(buttonConfig.action)}
             disabled={loading || buttonConfig.action === 'disabled'}
           >
             {loading ? (
@@ -141,7 +160,15 @@ const TournamentCard: React.FC<TournamentCardProps> = ({
           {getTextContent(variantConfig.textLines[2].key)}
         </Text>
       </View>
-    </View>
+      <TournamentInfoModal 
+        visible={modalVisible}
+        tournament={tournament} 
+        user={user} 
+        onClose={handleModalClose} 
+        onAction={handleButtonPress} 
+        refreshTournaments={refreshTournaments} 
+      />
+    </TouchableOpacity>
   );
 };
 
