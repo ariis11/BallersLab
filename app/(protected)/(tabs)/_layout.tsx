@@ -58,6 +58,20 @@ export default function BottomTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: "Leaderboard",
+          tabBarLabel: "Leaderboard",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="trophy"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
