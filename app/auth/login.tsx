@@ -1,9 +1,8 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -18,24 +17,58 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
   const { login } = useAuth();
+  const isMountedRef = useRef(true);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      setError('Please enter both email and password');
       return;
     }
+
+    if (loading) return; // Prevent multiple submissions
+
+    setError('');
     setLoading(true);
+    
     try {
       await login({ email: email.trim(), password });
-      // Navigate to main app (tabs)
-      router.replace('/(protected)/(tabs)/tournaments');
+      if (isMountedRef.current) {
+        router.replace('/(protected)/(tabs)/tournaments');
+      }
     } catch (error: any) {
-      Alert.alert('Login failed', error.message || 'Invalid credentials');
+      if (isMountedRef.current) {
+        setError('Invalid credentials');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleNavigateToRegister = () => {
+    if (loading || navigationTimeoutRef.current) return;
+    
+    navigationTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        router.push('/auth/register');
+      }
+      navigationTimeoutRef.current = null;
+    }, 100);
   };
 
   return (
@@ -48,12 +81,21 @@ export default function LoginScreen() {
         <Text style={styles.appName}>BallersLab</Text>
       </View>
       <View style={styles.form}>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+        
         <TextInput
           style={styles.input}
           placeholder="Email"
           placeholderTextColor="#A0AEC0"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (error) setError('');
+          }}
           autoCapitalize="none"
           keyboardType="email-address"
         />
@@ -62,14 +104,20 @@ export default function LoginScreen() {
           placeholder="Password"
           placeholderTextColor="#A0AEC0"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (error) setError('');
+          }}
           secureTextEntry
         />
         <TouchableOpacity style={styles.forgotContainer}>
           <Text style={styles.forgotText}>Forgot your password?</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.loginButton}
+          style={[
+            styles.loginButton,
+            loading ? styles.loginButtonDisabled : null
+          ]}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -82,11 +130,9 @@ export default function LoginScreen() {
       </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>Don&apos;t have account? </Text>
-        <Link href="/auth/register" asChild>
-          <TouchableOpacity>
-            <Text style={styles.createNowText}>Create now</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity onPress={handleNavigateToRegister}>
+          <Text style={styles.createNowText}>Create now</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -122,6 +168,18 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 32,
   },
+  errorContainer: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
   input: {
     backgroundColor: '#232B3A',
     color: '#E6F6FF',
@@ -145,6 +203,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 8,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#4A5568',
   },
   loginButtonText: {
     color: '#181F2A',

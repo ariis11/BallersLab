@@ -20,11 +20,12 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="(tabs)"
         options={{
           headerShown: false,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen

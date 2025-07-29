@@ -9,33 +9,33 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <StatusBar style="auto" />
-        <Stack>
+        <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen
             name="(protected)"
             options={{
               headerShown: false,
-              animation: "none",
+              gestureEnabled: false,
             }}
           />
           <Stack.Screen
             name="auth/login"
             options={{
               headerShown: false,
-              animation: "none",
+              gestureEnabled: false,
             }}
           />
           <Stack.Screen
             name="auth/register"
             options={{
               headerShown: false,
-              animation: "none",
+              gestureEnabled: false,
             }}
           />
           <Stack.Screen
             name="auth/create-profile"
             options={{
               headerShown: false,
-              animation: "none",
+              gestureEnabled: false,
             }}
           />
         </Stack>

@@ -1,7 +1,7 @@
 // app/auth/register.tsx
 import { useAuth } from '@/hooks/useAuth';
-import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -33,8 +33,22 @@ export default function RegisterScreen() {
   const [emailError, setEmailError] = useState('');
   const router = useRouter();
   const { register } = useAuth();
+  const isMountedRef = useRef(true);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRegister = async () => {
+    if (loading) return; // Prevent multiple submissions
+
     let valid = true;
     setEmailError('');
     setPasswordError('');
@@ -67,16 +81,33 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register({ email: email.trim(), password });
-      router.replace('/(protected)/(tabs)/tournaments');
+      if (isMountedRef.current) {
+        router.replace('/(protected)/(tabs)/tournaments');
+      }
     } catch (error: any) {
-      if (error.message && error.message.includes('Email already registered')) {
-        setEmailError('Email already registered');
-      } else {
-        Alert.alert('Registration failed', error.message || 'Could not create account');
+      if (isMountedRef.current) {
+        if (error.message && error.message.includes('Email already registered')) {
+          setEmailError('Email already registered');
+        } else {
+          Alert.alert('Registration failed');
+        }
       }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleNavigateToLogin = () => {
+    if (loading || navigationTimeoutRef.current) return;
+    
+    navigationTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        router.push('/auth/login');
+      }
+      navigationTimeoutRef.current = null;
+    }, 100);
   };
 
   return (
@@ -131,11 +162,9 @@ export default function RegisterScreen() {
       </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
-        <Link href="/auth/login" asChild>
-          <TouchableOpacity>
-            <Text style={styles.signInText}>Sign in</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity onPress={handleNavigateToLogin}>
+          <Text style={styles.signInText}>Sign in</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );

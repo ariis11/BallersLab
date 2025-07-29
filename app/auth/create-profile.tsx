@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 
 const ProfileCreationScreen = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { user, refreshUser } = useAuth();
 
   const [form, setForm] = useState({
@@ -56,7 +56,7 @@ const ProfileCreationScreen = () => {
       if (!res.ok) throw new Error(data.error || 'Profile creation failed');
       
       await refreshUser();
-      navigation.navigate('(protected)' as never);
+      router.replace('/(protected)/(tabs)/tournaments');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       Alert.alert('Error', message);
