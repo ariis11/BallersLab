@@ -11,8 +11,8 @@ export interface TournamentFormData {
   skillLevel: SkillLevel;
   ageGroup: AgeGroup;
   isPublic: boolean;
-  startDateTime: Date;
-  registrationDeadline: Date;
+  startDateTime: Date | null;
+  registrationDeadline: Date | null;
 }
 
 export interface CreateTournamentModalProps {

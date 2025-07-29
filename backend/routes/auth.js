@@ -102,14 +102,14 @@ router.post('/complete-profile', auth, validate(authSchemas.completeProfile), as
         return res.status(400).json({ error: 'Username already taken' });
       }
     }
-
+    
     // Create or update profile
     const profileData = {
       firstName,
       lastName,
       username,
       avatar,
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      dateOfBirth,
       height,
       weight,
       country,

@@ -100,13 +100,18 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     }
 
     const now = new Date();
-    if (tournamentForm.startDateTime <= now) {
+    if (!tournamentForm.startDateTime) {
+      newErrors.startDateTime = 'Start date & time is required';
+    } else if (tournamentForm.startDateTime <= now) {
       newErrors.startDateTime = 'Start date & time must be in the future';
     }
-    if (tournamentForm.registrationDeadline <= now) {
+    if (!tournamentForm.registrationDeadline) {
+      newErrors.registrationDeadline = 'Registration deadline is required';
+    } else if (tournamentForm.registrationDeadline <= now) {
       newErrors.registrationDeadline = 'Registration deadline must be in the future';
     }
-    if (tournamentForm.startDateTime <= tournamentForm.registrationDeadline) {
+    if (tournamentForm.startDateTime && tournamentForm.registrationDeadline && 
+        tournamentForm.startDateTime <= tournamentForm.registrationDeadline) {
       newErrors.startDateTime = 'Start date & time must be after registration deadline';
     }
 
@@ -139,11 +144,11 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
           locationName: tournamentForm.locationName.trim(),
           latitude: tournamentForm.latitude,
           longitude: tournamentForm.longitude,
-          startDate: tournamentForm.startDateTime.toISOString(),
+          startDate: tournamentForm.startDateTime!.toISOString(),
           ageGroup: tournamentForm.ageGroup,
           maxPlayers: parseInt(tournamentForm.maxPlayers),
           isPublic: tournamentForm.isPublic,
-          registrationDeadline: tournamentForm.registrationDeadline.toISOString()
+          registrationDeadline: tournamentForm.registrationDeadline!.toISOString()
         })
       });
 

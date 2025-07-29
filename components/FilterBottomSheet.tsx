@@ -1,6 +1,7 @@
 import { AGE_GROUPS, FilterState } from '@/types/tournament';
 import React from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import CustomDateTimePicker from './ui/DateTimePicker';
 
 const STATUS_FILTERS = [
   { label: 'Open', value: 'REGISTRATION_OPEN' },
@@ -57,21 +58,51 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({ visible, pendingF
             </View>
           </ScrollView>
           {/* Start Date */}
-          <Text style={styles.sheetGroupTitle}>Start Date (YYYY-MM-DD)</Text>
+          <Text style={styles.sheetGroupTitle}>Start Date</Text>
           <View style={styles.sheetInputsRow}>
-            <TextInput
-              style={styles.sheetInput}
+            <CustomDateTimePicker
+              value={pendingFilters.startDateFrom ? new Date(pendingFilters.startDateFrom) : null}
+              onValueChange={(date) => setPendingFilters(f => ({ 
+                ...f, 
+                startDateFrom: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null 
+              }))}
+              mode="date"
               placeholder="From"
-              placeholderTextColor="#A0A4B8"
-              value={pendingFilters.startDateFrom || ''}
-              onChangeText={v => setPendingFilters(f => ({ ...f, startDateFrom: v || null }))}
+              compact
             />
-            <TextInput
-              style={styles.sheetInput}
+            <CustomDateTimePicker
+              value={pendingFilters.startDateTo ? new Date(pendingFilters.startDateTo) : null}
+              onValueChange={(date) => setPendingFilters(f => ({ 
+                ...f, 
+                startDateTo: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null 
+              }))}
+              mode="date"
               placeholder="To"
-              placeholderTextColor="#A0A4B8"
-              value={pendingFilters.startDateTo || ''}
-              onChangeText={v => setPendingFilters(f => ({ ...f, startDateTo: v || null }))}
+              compact
+            />
+          </View>
+          {/* Registration Deadline */}
+          <Text style={styles.sheetGroupTitle}>Registration Deadline</Text>
+          <View style={styles.sheetInputsRow}>
+            <CustomDateTimePicker
+              value={pendingFilters.registrationDeadlineFrom ? new Date(pendingFilters.registrationDeadlineFrom) : null}
+              onValueChange={(date) => setPendingFilters(f => ({ 
+                ...f, 
+                registrationDeadlineFrom: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null 
+              }))}
+              mode="date"
+              placeholder="From"
+              compact
+            />
+            <CustomDateTimePicker
+              value={pendingFilters.registrationDeadlineTo ? new Date(pendingFilters.registrationDeadlineTo) : null}
+              onValueChange={(date) => setPendingFilters(f => ({ 
+                ...f, 
+                registrationDeadlineTo: date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : null 
+              }))}
+              mode="date"
+              placeholder="To"
+              compact
             />
           </View>
           {/* Max Players */}
@@ -112,24 +143,6 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({ visible, pendingF
               keyboardType="numeric"
               value={pendingFilters.spotsLeftTo !== null ? String(pendingFilters.spotsLeftTo) : ''}
               onChangeText={v => setPendingFilters(f => ({ ...f, spotsLeftTo: v ? Number(v) : null }))}
-            />
-          </View>
-          {/* Registration Deadline */}
-          <Text style={styles.sheetGroupTitle}>Registration Deadline (YYYY-MM-DD)</Text>
-          <View style={styles.sheetInputsRow}>
-            <TextInput
-              style={styles.sheetInput}
-              placeholder="From"
-              placeholderTextColor="#A0A4B8"
-              value={pendingFilters.registrationDeadlineFrom || ''}
-              onChangeText={v => setPendingFilters(f => ({ ...f, registrationDeadlineFrom: v || null }))}
-            />
-            <TextInput
-              style={styles.sheetInput}
-              placeholder="To"
-              placeholderTextColor="#A0A4B8"
-              value={pendingFilters.registrationDeadlineTo || ''}
-              onChangeText={v => setPendingFilters(f => ({ ...f, registrationDeadlineTo: v || null }))}
             />
           </View>
           {/* Distance */}

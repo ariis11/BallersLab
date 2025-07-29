@@ -5,11 +5,14 @@ import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface CustomDateTimePickerProps {
-  label: string;
-  value: Date;
-  onValueChange: (date: Date) => void;
+  label?: string;
+  value: Date | null;
+  onValueChange: (date: Date | null) => void;
   required?: boolean;
   error?: string;
+  mode?: 'date' | 'datetime';
+  placeholder?: string;
+  compact?: boolean;
 }
 
 const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
@@ -18,11 +21,21 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
   onValueChange,
   required = false,
   error,
+  mode = 'datetime',
+  placeholder = 'Select date',
+  compact = false
 }) => {
   const [showPicker, setShowPicker] = useState(false);
-  const [tempDate, setTempDate] = useState<Date | null>(null);
+  const [tempDate, setTempDate] = useState<Date | null>(value);
 
   const formatDateTime = (date: Date) => {
+    if (mode === 'date') {
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    }
     return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
@@ -34,7 +47,7 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
   };
 
   const handleShowPicker = () => {
-    setTempDate(value);
+    setTempDate(value || new Date());
     setShowPicker(true);
   };
 
@@ -51,20 +64,34 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
     setShowPicker(false);
   };
 
+  const handleClear = () => {
+    onValueChange(null);
+    setShowPicker(false);
+  };
+
+  const getIconName = () => {
+    return mode === 'date' ? 'calendar' : 'calendar-clock';
+  };
+
   return (
     <>
-      <View style={styles.container}>
-        <Text style={styles.label}>
-          {label} {required && '*'}
-        </Text>
+      <View style={compact ? styles.containerCompact : styles.container}>
+        {label && (
+          <Text style={styles.label}>
+            {label} {required && '*'}
+          </Text>
+        )}
         <TouchableOpacity
-          style={[styles.dateTimePicker, error && styles.inputError]}
+          style={[
+            compact ? styles.dateTimePickerCompact : styles.dateTimePicker, 
+            error && styles.inputError
+          ]}
           onPress={handleShowPicker}
         >
-          <Text style={styles.dateTimeText}>
-            {formatDateTime(value)}
+          <Text style={[compact ? styles.dateTimeTextCompact : styles.dateTimeText, !value && styles.placeholderText]}>
+            {value ? formatDateTime(value) : placeholder}
           </Text>
-          <MaterialCommunityIcons name="calendar-clock" size={20} color={Colors.app.primary} />
+          <MaterialCommunityIcons name={getIconName()} size={20} color={Colors.app.primary} />
         </TouchableOpacity>
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
@@ -73,15 +100,18 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
         <View style={styles.centeredPickerWrapper}>
           <View style={styles.centeredPickerContainer}>
             <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>Select Date & Time</Text>
+              <Text style={styles.pickerTitle}>Select Date</Text>
               <View style={{ flex: 1 }} />
-              <TouchableOpacity onPress={handleDone}>
+              <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDone} style={styles.doneButton}>
                 <Text style={styles.pickerDoneText}>Done</Text>
               </TouchableOpacity>
             </View>
             <DateTimePicker
-              value={tempDate || value}
-              mode="datetime"
+              value={tempDate || new Date()}
+              mode={mode}
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={handleDateChange}
               style={styles.picker}
@@ -96,6 +126,10 @@ const CustomDateTimePicker: React.FC<CustomDateTimePickerProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: 15,
+  },
+  containerCompact: {
+    marginBottom: 0,
+    minWidth: '50%'
   },
   label: {
     color: Colors.app.textSecondary,
@@ -112,6 +146,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.app.border,
   },
+  dateTimePickerCompact: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: '#23263A',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: '#2A2E44',
+    marginHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   inputError: {
     borderColor: Colors.app.error,
   },
@@ -120,6 +167,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     marginRight: 10,
+  },
+  dateTimeTextCompact: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+    marginRight: 10,
+  },
+  placeholderText: {
+    color: Colors.app.textSecondary,
   },
   centeredPickerWrapper: {
     position: 'absolute',
@@ -151,11 +207,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+    width: '100%',
   },
   pickerTitle: {
     color: Colors.app.text,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  clearButton: {
+    marginRight: 10,
+  },
+  clearButtonText: {
+    color: Colors.app.error,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  doneButton: {
+    marginLeft: 10,
   },
   pickerDoneText: {
     color: Colors.app.primary,

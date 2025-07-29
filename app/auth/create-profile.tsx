@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import CustomDateTimePicker from '../../components/ui/DateTimePicker';
 import { useAuth } from '../../hooks/useAuth';
 
 const ProfileCreationScreen = () => {
@@ -13,7 +14,7 @@ const ProfileCreationScreen = () => {
     lastName: '',
     username: '',
     avatar: '',
-    dateOfBirth: '',
+    dateOfBirth: null as Date | null,
     height: '',
     weight: '',
     country: '',
@@ -21,45 +22,57 @@ const ProfileCreationScreen = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (key: keyof typeof form, value: string) => {
+  const handleChange = (key: keyof typeof form, value: string | Date | null) => {
     setForm({ ...form, [key]: value });
   };
 
   const handleSubmit = async () => {
     if (!form.firstName || !form.lastName || !form.username || !form.dateOfBirth || !form.height || !form.weight || !form.country || !form.city) {
-      Alert.alert('Please fill in all fields.');
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
+
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) throw new Error('No auth token found');
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/complete-profile`, {
+      
+      // Create a date with 00:00:00 time for dateOfBirth
+      const dateOfBirthWithZeroTime = form.dateOfBirth ? new Date(form.dateOfBirth) : null;
+      if (dateOfBirthWithZeroTime) {
+        dateOfBirthWithZeroTime.setHours(0, 0, 0, 0);
+      }
+      
+      const requestBody = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        username: form.username,
+        avatar: 'https://example.com/avatar.png',
+        dateOfBirth: dateOfBirthWithZeroTime?.toISOString(),
+        height: parseFloat(form.height),
+        weight: parseFloat(form.weight),
+        country: form.country,
+        city: form.city,
+      };
+      
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/complete-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          username: form.username,
-          avatar: 'https://example.com/avatar.png',
-          dateOfBirth: form.dateOfBirth,
-          height: parseFloat(form.height),
-          weight: parseFloat(form.weight),
-          country: form.country,
-          city: form.city,
-        }),
+        body: JSON.stringify(requestBody),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Profile creation failed');
       
-      await refreshUser();
-      router.replace('/(protected)/(tabs)/tournaments');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Error', message);
+      if (response.ok) {
+        await refreshUser();
+        router.replace('/(protected)/(tabs)/tournaments');
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to create profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -90,12 +103,11 @@ const ProfileCreationScreen = () => {
           value={form.username}
           onChangeText={text => handleChange('username', text)}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Date of Birth (YYYY-MM-DD)"
-          placeholderTextColor="#AAB1C7"
+        <CustomDateTimePicker
           value={form.dateOfBirth}
-          onChangeText={text => handleChange('dateOfBirth', text)}
+          onValueChange={(date) => handleChange('dateOfBirth', date)}
+          mode="date"
+          placeholder="Select your date of birth"
         />
         <TextInput
           style={styles.input}
