@@ -11,18 +11,14 @@ export default function BottomTabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: "#00E6FF",
         tabBarInactiveTintColor: "#A0A4B8",
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: "#181C2E",
           borderTopColor: "#23263A",
           borderTopWidth: 1,
           paddingBottom: insets.bottom,
-          paddingTop: 8,
-          height: 55 + insets.bottom,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "500",
-          marginTop: 4,
+          paddingTop: 10,
+          height: 50 + insets.bottom,
         },
         headerShown: false,
       }}
@@ -33,11 +29,10 @@ export default function BottomTabsLayout() {
         name="tournaments"
         options={{
           title: "Tournaments",
-          tabBarLabel: "Tournaments",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="basketball"
-              size={size}
+              name="trophy-variant"
+              size={30}
               color={color}
             />
           ),
@@ -47,11 +42,10 @@ export default function BottomTabsLayout() {
         name="my-tournaments"
         options={{
           title: "My Tournaments",
-          tabBarLabel: "My Tournaments",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="basketball"
-              size={size}
+              name="account-group"
+              size={30}
               color={color}
             />
           ),
@@ -61,11 +55,10 @@ export default function BottomTabsLayout() {
         name="leaderboard"
         options={{
           title: "Leaderboard",
-          tabBarLabel: "Leaderboard",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="trophy"
-              size={size}
+              name="podium"
+              size={30}
               color={color}
             />
           ),
@@ -75,11 +68,10 @@ export default function BottomTabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarLabel: "Profile",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="account"
-              size={size}
+              name="account-circle"
+              size={30}
               color={color}
             />
           ),

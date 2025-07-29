@@ -180,51 +180,51 @@ router.get('/list', async (req, res) => {
     const orderBy = {};
     orderBy[sortBy] = sortOrder;
 
-    const [tournaments] = await Promise.all([
-      prisma.tournament.findMany({
-        where,
-        skip,
-        take,
-        orderBy,
-        include: {
-          creator: {
-            select: {
-              id: true,
-              email: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  username: true,
-                  avatar: true
-                }
+    // Get tournaments with database pagination
+    const tournaments = await prisma.tournament.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      include: {
+        creator: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                username: true,
+                avatar: true
               }
             }
-          },
-          participants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  email: true,
-                  profile: {
-                    select: {
-                      firstName: true,
-                      lastName: true,
-                      username: true,
-                      avatar: true
-                    }
+          }
+        },
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                profile: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    username: true,
+                    avatar: true
                   }
                 }
               }
             }
           }
         }
-      })
-    ]);
+      }
+    });
 
-    // Filter by spotsLeft in Node.js
     let filteredTournaments = tournaments;
+    
+    // Filter by spotsLeft (calculated field)
     if (spotsLeftFrom || spotsLeftTo) {
       filteredTournaments = filteredTournaments.filter(t => {
         const spotsLeft = t.maxPlayers - t.currentPlayers;
@@ -234,7 +234,7 @@ router.get('/list', async (req, res) => {
       });
     }
 
-    // Filter by distance if userLat, userLng, and distance are provided
+    // Filter by distance (Haversine calculation)
     if (userLat && userLng && distance) {
       const userLatNum = parseFloat(userLat);
       const userLngNum = parseFloat(userLng);
@@ -245,12 +245,11 @@ router.get('/list', async (req, res) => {
       });
     }
 
-    // Paginate after all filtering
-    const total = filteredTournaments.length;
-    const paginatedTournaments = filteredTournaments.slice(skip, skip + take);
+    // Get total count for pagination (without Node.js filters for now)
+    const total = await prisma.tournament.count({ where });
 
     res.json({
-      tournaments: paginatedTournaments,
+      tournaments: filteredTournaments,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

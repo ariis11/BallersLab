@@ -15,11 +15,16 @@ import JoinByCodeModal from '../../../components/JoinByCodeModal';
 import SortBottomSheet from '../../../components/SortBottomSheet';
 import TournamentCard from '../../../components/TournamentCard';
 
+const TOURNAMENTS_PER_PAGE = 15;
+
 export default function TournamentsScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Use custom hooks
@@ -60,11 +65,20 @@ export default function TournamentsScreen() {
     return userLocation;
   };
 
-  const fetchTournaments = async (filters = activeFilters) => {
-    setLoading(true);
+  const fetchTournaments = async (filters = activeFilters, page = 1, append = false) => {
+    if (page === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    
     try {
       let url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/list?`;
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = {
+        page: String(page),
+        limit: String(TOURNAMENTS_PER_PAGE)
+      };
+      
       if (filters.status) params.status = filters.status;
       if (filters.skillLevel) params.skillLevel = filters.skillLevel;
       if (filters.ageGroup) params.ageGroup = filters.ageGroup;
@@ -80,6 +94,7 @@ export default function TournamentsScreen() {
         const loc = await ensureUserLocation();
         if (!loc) {
           setLoading(false);
+          setLoadingMore(false);
           return;
         }
         params.userLat = String(loc.lat);
@@ -96,15 +111,40 @@ export default function TournamentsScreen() {
       url += Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
       const res = await fetch(url);
       const data = await res.json();
-      const sortedTournaments = sortTournamentsList(data.tournaments || []);
-      setTournaments(sortedTournaments);
+      
+      const newTournaments = data.tournaments || [];
+      const sortedTournaments = sortTournamentsList(newTournaments);
+      
+      if (append) {
+        setTournaments(prev => [...prev, ...sortedTournaments]);
+      } else {
+        setTournaments(sortedTournaments);
+      }
+      
+      // Update pagination state
+      setHasMore(data.pagination && data.pagination.page < data.pagination.pages);
+      setCurrentPage(page);
+      
     } catch (e) {
-      setTournaments([]);
+      console.error('Error fetching tournaments:', e);
+      if (!append) {
+        setTournaments([]);
+      }
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
+  };
+
+  const loadMoreTournaments = () => {
+    if (!loadingMore && hasMore) {
+      fetchTournaments(activeFilters, currentPage + 1, true);
+    }
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
     fetchTournaments();
   }, [activeFilters, sortState]);
 
@@ -129,11 +169,25 @@ export default function TournamentsScreen() {
   };
 
   // Add a refreshTournaments function for child components
-  const refreshTournaments = () => fetchTournaments();
+  const refreshTournaments = () => {
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchTournaments();
+  };
 
   const handleTournamentActionWrapper = async (action: string, tournament: Tournament) => {
     await handleTournamentAction({ action, tournament });
     refreshTournaments();
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color="#00E6FF" />
+        <Text style={styles.loadingMoreText}>Loading more tournaments...</Text>
+      </View>
+    );
   };
 
   return (
@@ -179,9 +233,14 @@ export default function TournamentsScreen() {
             />
           )}
           refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={() => fetchTournaments()} />
+            <RefreshControl refreshing={loading} onRefresh={() => refreshTournaments()} />
           }
+          onEndReached={loadMoreTournaments}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
           contentContainerStyle={{ paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews={false}
           ListEmptyComponent={<Text style={{ color: '#fff', textAlign: 'center', marginTop: 32 }}>No tournaments found.</Text>}
         />
       )}
@@ -190,7 +249,7 @@ export default function TournamentsScreen() {
       <JoinByCodeModal
         visible={showJoinModal}
         onClose={() => setShowJoinModal(false)}
-        onJoinSuccess={() => fetchTournaments()}
+        onJoinSuccess={() => refreshTournaments()}
       />
 
       {/* Filter Bottom Sheet */}
@@ -440,6 +499,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 6,
     fontWeight: '600',
+    fontSize: 14,
+  },
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  loadingMoreText: {
+    color: '#A0A4B8',
+    marginLeft: 8,
     fontSize: 14,
   },
 

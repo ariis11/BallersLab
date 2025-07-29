@@ -20,8 +20,8 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [mapRegion, setMapRegion] = useState<{ latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }>({
-    latitude: 40.7128,
-    longitude: -74.0060,
+    latitude: 54.6872,
+    longitude: 25.2797,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
@@ -77,7 +77,7 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
     } catch (error) {
       console.error('Error getting location:', error);
       // Default to a fallback location (e.g., city center)
-      const fallbackLocation = { latitude: 40.7128, longitude: -74.0060 }; // NYC
+      const fallbackLocation = { latitude: 54.6872, longitude: 25.2797 }; // Vilnius
       setSelectedLocation(fallbackLocation);
       setMapRegion({
         latitude: fallbackLocation.latitude,

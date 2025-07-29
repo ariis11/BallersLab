@@ -85,7 +85,7 @@ class TournamentStatusService {
     if (tournament.status === 'IN_PROGRESS') {
       const twoDaysAfterStart = new Date(tournament.startDate.getTime() + 48 * 60 * 60 * 1000);
       if (now >= twoDaysAfterStart) {
-        return 'COMPLETED';
+        return 'CANCELLED';
       }
     }
 

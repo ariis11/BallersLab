@@ -176,6 +176,7 @@ const MyTournamentsScreen = () => {
             <Text style={styles.emptyText}>No tournaments in this category.</Text>
           }
           contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
