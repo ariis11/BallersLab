@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../config/database');
 const auth = require('../middleware/auth');
 const { validate, tournamentSchemas } = require('../middleware/validation');
+const { generateUniqueTournamentCode } = require('../utils/tournamentCodeGenerator');
 
 const router = express.Router();
 
@@ -22,6 +23,9 @@ router.post('/create', auth, validate(tournamentSchemas.create), async (req, res
       registrationDeadline
     } = req.body;
 
+    // Generate unique tournament code
+    const tournamentCode = await generateUniqueTournamentCode();
+
     const tournament = await prisma.tournament.create({
       data: {
         title,
@@ -36,6 +40,7 @@ router.post('/create', auth, validate(tournamentSchemas.create), async (req, res
         isPublic: isPublic !== undefined ? isPublic : true,
         registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
         status: 'REGISTRATION_OPEN',
+        code: tournamentCode,
         createdBy: req.user.id
       },
       include: {

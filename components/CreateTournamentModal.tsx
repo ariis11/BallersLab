@@ -28,8 +28,8 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     skillLevel: 'ALL_LEVELS',
     ageGroup: 'ALL_AGES',
     isPublic: true,
-    startDateTime: new Date(),
-    registrationDeadline: new Date(),
+    startDateTime: null,
+    registrationDeadline: null,
   });
 
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -53,8 +53,8 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
       skillLevel: 'ALL_LEVELS',
       ageGroup: 'ALL_AGES',
       isPublic: true,
-      startDateTime: new Date(),
-      registrationDeadline: new Date(),
+      startDateTime: null,
+      registrationDeadline: null,
     });
     setErrors({});
   };
@@ -89,13 +89,13 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     }
 
     if (!tournamentForm.maxPlayers.trim()) {
-      newErrors.maxPlayers = 'Max players is required';
+      newErrors.maxPlayers = 'Players number is required';
     } else {
       const maxPlayersNum = parseInt(tournamentForm.maxPlayers, 10);
       if (isNaN(maxPlayersNum)) {
-        newErrors.maxPlayers = 'Max players must be a number';
+        newErrors.maxPlayers = 'Players must be a number';
       } else if (maxPlayersNum < 4) {
-        newErrors.maxPlayers = 'Max players must be at least 4';
+        newErrors.maxPlayers = 'Players must be at least 4';
       }
     }
 
@@ -140,7 +140,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
         },
         body: JSON.stringify({
           title: tournamentForm.title.trim(),
-          description: tournamentForm.description.trim(),
+          description: tournamentForm.description.trim() || undefined,
           locationName: tournamentForm.locationName.trim(),
           latitude: tournamentForm.latitude,
           longitude: tournamentForm.longitude,
@@ -231,10 +231,10 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
             </View>
 
           <FormInput
-            label="Max Players"
+            label="Players Number"
             value={tournamentForm.maxPlayers}
             onChangeText={(text) => setTournamentForm(prev => ({ ...prev, maxPlayers: text }))}
-            placeholder="Enter max players (e.g., 16)"
+            placeholder="Enter players number (e.g., 16)"
             keyboardType="numeric"
             required
             error={errors.maxPlayers}
