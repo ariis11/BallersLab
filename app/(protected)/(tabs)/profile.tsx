@@ -1,13 +1,62 @@
 import { useAuth } from '@/hooks/useAuth';
-import React from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AVATAR_PLACEHOLDER = require('@/assets/images/blank-player.jpg');
 
+interface UserPointsData {
+  totalTournamentsPlayed: number;
+  totalPoints: number;
+  ranking: number;
+  ageGroup: string | null;
+}
+
 export default function ProfileScreen() {
   const { user, loading: userLoading, logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const [userPointsData, setUserPointsData] = useState<UserPointsData>({
+    totalTournamentsPlayed: 0,
+    totalPoints: 0,
+    ranking: 0,
+    ageGroup: null
+  });
+  const [loadingPoints, setLoadingPoints] = useState(false);
+
+  const fetchUserPoints = async () => {
+    try {
+      setLoadingPoints(true);
+      const token = await AsyncStorage.getItem('authToken');
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/leaderboard/user-points`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user points');
+      }
+
+      const data: UserPointsData = await response.json();
+      setUserPointsData(data);
+    } catch (error) {
+      console.error('Error fetching user points:', error);
+      // Keep default values (0) on error
+    } finally {
+      setLoadingPoints(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserPoints();
+    }
+  }, [user]);
 
   if (userLoading) {
     return (
@@ -22,48 +71,69 @@ export default function ProfileScreen() {
     ? `${profile.firstName} ${profile.lastName}` 
     : user?.email || 'User';
 
-  const getAge = (dateOfBirth: string) => {
+  const formatDateOfBirth = (dateOfBirth: string) => {
     const dob = new Date(dateOfBirth);
-    const diff = Date.now() - dob.getTime();
-    const age = new Date(diff).getUTCFullYear() - 1970;
-    return age;
+    const year = dob.getFullYear();
+    const month = String(dob.getMonth() + 1).padStart(2, '0');
+    const day = String(dob.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatAgeGroup = (ageGroup: string | null) => {
+    if (!ageGroup) return '-';
+    switch (ageGroup) {
+      case 'ALL_AGES': return 'All Ages';
+      case 'U18': return 'Under 18';
+      case 'U25': return '18-25';
+      case 'U35': return '26-35';
+      case 'U45': return '36-45';
+      case 'U55': return '46-55';
+      case 'OVER_55': return 'Over 55';
+      default: return ageGroup;
+    }
   };
 
   const statsData = [
     { label: 'Height:', value: profile.height ? `${profile.height}cm` : '-' },
     { label: 'Weight:', value: profile.weight ? `${profile.weight}kg` : '-' },
-    { label: 'Age:', value: profile.dateOfBirth ? `${getAge(profile.dateOfBirth)} years` : '-' },
-    { label: 'Country:', value: profile.country || '-' },
-    { label: 'City:', value: profile.city || '-' },
-    { label: 'Total tournaments played:', value: 0 },
-    { label: 'Total points:', value: 0 },
-    { label: 'Ranking:', value: 0 },
+    { label: 'Birth Date:', value: profile.dateOfBirth ? formatDateOfBirth(profile.dateOfBirth) : '-' },
+    { label: 'Age Group:', value: loadingPoints ? '...' : formatAgeGroup(userPointsData.ageGroup) },
+    { label: 'Total tournaments played:', value: loadingPoints ? '...' : userPointsData.totalTournamentsPlayed },
+    { label: 'Total points:', value: loadingPoints ? '...' : userPointsData.totalPoints },
+    { label: 'Ranking:', value: loadingPoints ? '...' : userPointsData.ranking },
   ];
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Text style={styles.screenTitle}>Profile</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Fixed Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Image source={AVATAR_PLACEHOLDER} style={styles.avatar} />
-        </View>
-        <View style={styles.nameContainer}>
-          <Text style={styles.name}>{fullName}</Text>
-          <Text style={styles.city}>{profile.city || '-'}</Text>
-        </View>
+        <Text style={styles.screenTitle}>Profile</Text>
       </View>
-      <View style={styles.statsBox}>
-        {statsData.map((item, idx) => (
-          <React.Fragment key={item.label}>
-            <StatRow label={item.label} value={item.value} />
-            {idx < statsData.length - 1 && <View style={styles.divider} />}
-          </React.Fragment>
-        ))}
+
+      {/* Content */}
+      <View style={styles.content}>
+        <View style={styles.headerProfile}>
+          <View style={styles.avatarContainer}>
+            <Image source={AVATAR_PLACEHOLDER} style={styles.avatar} />
+          </View>
+          <View style={styles.nameContainer}>
+            <Text style={styles.name}>{fullName}</Text>
+            <Text style={styles.city}>{profile.city || '-'}</Text>
+          </View>
+        </View>
+        <View style={styles.statsBox}>
+          {statsData.map((item, idx) => (
+            <React.Fragment key={item.label}>
+              <StatRow label={item.label} value={item.value} />
+              {idx < statsData.length - 1 && <View style={styles.divider} />}
+            </React.Fragment>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.8}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.8}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -81,9 +151,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A1121',
   },
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
   content: {
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
   loadingContainer: {
@@ -100,7 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     letterSpacing: 0.5,
   },
-  header: {
+  headerProfile: {
     alignItems: 'center',
     marginBottom: 24,
     width: '100%',
@@ -173,7 +248,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   logoutButton: {
-    marginTop: 10,
+    marginTop: 5,
     backgroundColor: '#00E6FF',
     borderRadius: 12,
     paddingVertical: 14,

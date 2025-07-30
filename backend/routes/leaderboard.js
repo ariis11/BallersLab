@@ -122,4 +122,51 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get user points data (best record by total points)
+router.get('/user-points', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all user points records for this user
+    const userPointsRecords = await prisma.userPoints.findMany({
+      where: { userId },
+      orderBy: { points: 'desc' }
+    });
+
+    if (userPointsRecords.length === 0) {
+      // No records found, return zeros
+      return res.json({
+        totalTournamentsPlayed: 0,
+        totalPoints: 0,
+        ranking: 0,
+        ageGroup: null
+      });
+    }
+
+    // Get the record with the most points
+    const bestRecord = userPointsRecords[0];
+
+    // Calculate ranking for this age group
+    const usersWithMorePoints = await prisma.userPoints.count({
+      where: {
+        ageGroup: bestRecord.ageGroup,
+        points: { gt: bestRecord.points }
+      }
+    });
+
+    const ranking = usersWithMorePoints + 1;
+
+    res.json({
+      totalTournamentsPlayed: bestRecord.tournamentsPlayed,
+      totalPoints: bestRecord.points,
+      ranking: ranking,
+      ageGroup: bestRecord.ageGroup
+    });
+
+  } catch (error) {
+    console.error('Get user points error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router; 
