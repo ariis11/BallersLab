@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { TournamentBracketCardProps } from '../types/bracket';
 
@@ -11,6 +11,20 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
   const [score2, setScore2] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | string[] | null>(null);
+
+  // Function to reset modal state
+  const resetModalState = () => {
+    setScore1('');
+    setScore2('');
+    setErrorMessage(null);
+    setSubmitting(false);
+  };
+
+  // Function to close modal and reset state
+  const closeModal = () => {
+    setShowScoreModal(false);
+    resetModalState();
+  };
 
   const isPlayer1 = user && match.player1?.id === user.id;
   const isPlayer2 = user && match.player2?.id === user.id;
@@ -65,11 +79,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
     setSubmitting(true);
     try {
       await onScoreSubmit(match.id, score1Num, score2Num);
-      setShowScoreModal(false);
-      setScore1('');
-      setScore2('');
-      setErrorMessage(null);
-      Alert.alert('Success', 'Score submitted successfully!');
+      closeModal();
     } catch (error) {
       setErrorMessage('Failed to submit score');
     } finally {
@@ -91,7 +101,11 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
           isPlayer1Winner && styles.winnerRow
         ]}>
           <View style={styles.playerInfoRow}>
-            <Text style={[styles.playerName, isPlayer1Winner && styles.winnerText]}>
+            <Text style={[
+              styles.playerName, 
+              isPlayer1Winner && styles.winnerText,
+              !match.player1 && styles.tbdText
+            ]}>
               {match.player1?.name || 'TBD'}
             </Text>
             {/* Submission icon for running matches (not bye matches) */}
@@ -116,7 +130,8 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
             <Text style={[
               styles.playerName, 
               isPlayer2Winner && styles.winnerText,
-              isByeMatch && styles.byeText
+              isByeMatch && styles.byeText,
+              !match.player2 && styles.tbdText
             ]}>
               {match.player2?.name || 'TBD'}
             </Text>
@@ -136,7 +151,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
         {isDisputed && (
           <View style={styles.disputeRow}>
             <MaterialCommunityIcons name="alert-circle" size={18} color="#FF6B6B" style={{ marginRight: 6 }} />
-            <Text style={styles.disputeText}>Score dispute! Please resubmit.</Text>
+            <Text style={styles.disputeText}>Scores do not match!</Text>
           </View>
         )}
       </View>
@@ -157,67 +172,69 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
         visible={showScoreModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowScoreModal(false)}
+        onRequestClose={closeModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{isDisputed ? 'Resubmit Score' : 'Submit Match Score'}</Text>
-            {/* Error message display */}
-            {errorMessage && (
-              <View style={styles.errorBox}>
-                {Array.isArray(errorMessage) ? (
-                  errorMessage.map((msg, idx) => (
-                    <Text key={idx} style={styles.errorText}>⚠️ {msg}</Text>
-                  ))
-                ) : (
-                  <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
-                )}
+        <TouchableWithoutFeedback onPress={closeModal}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{isDisputed ? 'Resubmit Score' : 'Submit Match Score'}</Text>
+              {/* Error message display */}
+              {errorMessage && (
+                <View style={styles.errorBox}>
+                  {Array.isArray(errorMessage) ? (
+                    errorMessage.map((msg, idx) => (
+                      <Text key={idx} style={styles.errorText}>⚠️ {msg}</Text>
+                    ))
+                  ) : (
+                    <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
+                  )}
+                </View>
+              )}
+              <View style={styles.scoreInputContainer}>
+                <Text style={styles.playerLabel}>{match.player1?.name}</Text>
+                <TextInput
+                  style={styles.scoreInput}
+                  value={score1}
+                  onChangeText={setScore1}
+                  placeholder="Score"
+                  keyboardType="numeric"
+                  placeholderTextColor="#A0A4B8"
+                  editable={!submitting}
+                />
               </View>
-            )}
-            <View style={styles.scoreInputContainer}>
-              <Text style={styles.playerLabel}>{match.player1?.name}</Text>
-              <TextInput
-                style={styles.scoreInput}
-                value={score1}
-                onChangeText={setScore1}
-                placeholder="Score"
-                keyboardType="numeric"
-                placeholderTextColor="#A0A4B8"
-                editable={!submitting}
-              />
-            </View>
-            <View style={styles.scoreInputContainer}>
-              <Text style={styles.playerLabel}>{match.player2?.name}</Text>
-              <TextInput
-                style={styles.scoreInput}
-                value={score2}
-                onChangeText={setScore2}
-                placeholder="Score"
-                keyboardType="numeric"
-                placeholderTextColor="#A0A4B8"
-                editable={!submitting}
-              />
-            </View>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setShowScoreModal(false)}
-                disabled={submitting}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
-                onPress={handleSubmitScore}
-                disabled={submitting}
-              >
-                <Text style={styles.submitButtonText}>
-                  {submitting ? 'Submitting...' : (isDisputed ? 'Resubmit' : 'Submit')}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.scoreInputContainer}>
+                <Text style={styles.playerLabel}>{match.player2?.name}</Text>
+                <TextInput
+                  style={styles.scoreInput}
+                  value={score2}
+                  onChangeText={setScore2}
+                  placeholder="Score"
+                  keyboardType="numeric"
+                  placeholderTextColor="#A0A4B8"
+                  editable={!submitting}
+                />
+              </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={closeModal}
+                  disabled={submitting}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+                  onPress={handleSubmitScore}
+                  disabled={submitting}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {submitting ? 'Submitting...' : (isDisputed ? 'Resubmit' : 'Submit')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -268,6 +285,10 @@ const styles = StyleSheet.create({
     color: '#00E6FF',
   },
   byeText: {
+    color: '#A0A4B8',
+    fontStyle: 'italic',
+  },
+  tbdText: {
     color: '#A0A4B8',
     fontStyle: 'italic',
   },

@@ -11,6 +11,7 @@ export default function BracketScreen() {
   const [bracketData, setBracketData] = useState<BracketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRound, setSelectedRound] = useState<number>(1);
 
   useEffect(() => {
     fetchBracketData();
@@ -133,6 +134,8 @@ export default function BracketScreen() {
         <TournamentBracket 
           bracketData={bracketData}
           onScoreSubmit={handleScoreSubmit}
+          selectedRound={selectedRound}
+          onRoundChange={setSelectedRound}
         />
       </ScrollView>
     </View>

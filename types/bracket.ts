@@ -42,6 +42,8 @@ export interface BracketData {
 export interface TournamentBracketProps {
   bracketData: BracketData | null;
   onScoreSubmit: (matchId: string, score1: number, score2: number) => Promise<void>;
+  selectedRound: number;
+  onRoundChange: (round: number) => void;
 }
 
 export interface TournamentBracketCardProps {

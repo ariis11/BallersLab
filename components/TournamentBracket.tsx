@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { TournamentBracketProps } from '../types/bracket';
 import TournamentBracketCard from './TournamentBracketCard';
 
-const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracketData, onScoreSubmit }) => {
-  const [selectedRound, setSelectedRound] = useState<number>(1);
+const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracketData, onScoreSubmit, selectedRound, onRoundChange }) => {
+  // Validate selected round when bracket data changes
+  React.useEffect(() => {
+    if (bracketData && bracketData.rounds.length > 0) {
+      // Check if current selected round exists in the new data
+      const roundExists = bracketData.rounds.some(round => round.roundNumber === selectedRound);
+      if (!roundExists) {
+        onRoundChange(1);
+      }
+    }
+  }, [bracketData, selectedRound, onRoundChange]);
 
   if (!bracketData) {
     return (
@@ -46,7 +55,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ bracketData, onSc
                 styles.roundTab,
                 selectedRound === round.roundNumber && styles.roundTabActive
               ]}
-              onPress={() => setSelectedRound(round.roundNumber)}
+              onPress={() => onRoundChange(round.roundNumber)}
             >
               <Text style={[
                 styles.roundTabText,
