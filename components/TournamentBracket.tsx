@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { TournamentBracketProps } from '../types/bracket';
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   roundTabActive: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
   },
   roundTabText: {
     color: '#A0A4B8',

@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import React, { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',

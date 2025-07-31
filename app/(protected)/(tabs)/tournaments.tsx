@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useTournamentFilters } from '@/hooks/useTournamentFilters';
 import { useTournamentSorting } from '@/hooks/useTournamentSorting';
@@ -184,7 +185,7 @@ export default function TournamentsScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color="#00E6FF" />
+        <ActivityIndicator size="small" color={Colors.app.primary} />
         <Text style={styles.loadingMoreText}>Loading more tournaments...</Text>
       </View>
     );
@@ -218,7 +219,7 @@ export default function TournamentsScreen() {
 
       {/* Tournament List */}
       {loading ? (
-        <ActivityIndicator size="large" color="#00E6FF" style={{ marginTop: 32 }} />
+        <ActivityIndicator size="large" color={Colors.app.primary} style={{ marginTop: 32 }} />
       ) : (
         <FlatList
           data={tournaments}
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 14,
     borderWidth: 2,
-    borderColor: '#00E6FF',
+    borderColor: Colors.app.primary,
   },
   title: {
     color: '#fff',
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   joinButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 16,
     paddingHorizontal: 22,
     paddingVertical: 8,
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sheetChipActive: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
   },
   sheetChipInactive: {
     backgroundColor: '#23263A',
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     color: '#A0A4B8',
   },
   sheetDoneButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 16,
     paddingVertical: 12,
     marginTop: 18,

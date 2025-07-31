@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -83,7 +84,7 @@ export default function BracketScreen() {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00E6FF" />
+          <ActivityIndicator size="large" color={Colors.app.primary} />
           <Text style={styles.loadingText}>Loading bracket...</Text>
         </View>
       </View>
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,

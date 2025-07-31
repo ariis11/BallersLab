@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { AGE_GROUPS, FilterState } from '@/types/tournament';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,

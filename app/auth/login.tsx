@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -78,7 +79,6 @@ export default function LoginScreen() {
     >
       <View style={styles.logoContainer}>
         <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
-        <Text style={styles.appName}>BallersLab</Text>
       </View>
       <View style={styles.form}>
         {error ? (
@@ -147,12 +147,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
+    alignItems: 'center'
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     resizeMode: 'contain',
     marginBottom: 8,
   },
@@ -198,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   loginButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -223,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   createNowText: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontSize: 14,
     fontWeight: 'bold',
   },

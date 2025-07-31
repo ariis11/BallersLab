@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { AGE_GROUPS, FilterState } from '@/types/tournament';
 import React from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sheetChipActive: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
   },
   sheetChipInactive: {
     backgroundColor: '#23263A',
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
     color: '#A0A4B8',
   },
   sheetDoneButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 16,
     paddingVertical: 12,
     marginTop: 18,

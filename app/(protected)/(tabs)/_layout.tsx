@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -9,7 +10,7 @@ export default function BottomTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#00E6FF",
+        tabBarActiveTintColor: Colors.app.primary,
         tabBarInactiveTintColor: "#A0A4B8",
         tabBarShowLabel: false,
         tabBarStyle: {

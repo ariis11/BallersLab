@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
@@ -128,7 +129,7 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <MaterialCommunityIcons name="close" size={24} color="#00E6FF" />
+            <MaterialCommunityIcons name="close" size={24} color={Colors.app.primary} />
           </TouchableOpacity>
           <Text style={styles.title}>Select Location</Text>
           <TouchableOpacity onPress={handleConfirm} style={styles.confirmButton}>
@@ -148,7 +149,7 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
             {selectedLocation && (
               <Marker
                 coordinate={selectedLocation}
-                pinColor="#00E6FF"
+                pinColor={Colors.app.primary}
                 draggable
                 onDragEnd={(e) => setSelectedLocation(e.nativeEvent.coordinate)}
               />
@@ -162,7 +163,7 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
             style={styles.currentLocationButton}
             onPress={handleUseCurrentLocation}
           >
-            <MaterialCommunityIcons name="crosshairs-gps" size={20} color="#00E6FF" />
+            <MaterialCommunityIcons name="crosshairs-gps" size={20} color={Colors.app.primary} />
             <Text style={styles.currentLocationText}>Use Current Location</Text>
           </TouchableOpacity>
         </View>
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   confirmButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -233,10 +234,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#00E6FF',
+    borderColor: Colors.app.primary,
   },
   currentLocationText: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     marginLeft: 8,
     fontWeight: '500',
   },

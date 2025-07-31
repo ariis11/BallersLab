@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -129,8 +130,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sheetChipActive: {
-    backgroundColor: '#00E6FF',
-    borderColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
+    borderColor: Colors.app.primary,
   },
   sheetChipInactive: {
     backgroundColor: 'transparent',
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     paddingBottom: 25,
   },
   sheetDoneButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 16,
     paddingVertical: 12,
     alignItems: 'center',

@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
@@ -58,9 +59,9 @@ const TournamentInfoModal: React.FC<TournamentInfoModalProps> = ({
       case 'DRAFT':
         return '#A0A4B8'; // Gray
       case 'PUBLISHED':
-        return '#00E6FF'; // Cyan
+        return Colors.app.primary; // Cyan
       case 'REGISTRATION_OPEN':
-        return '#00E6FF'; // Cyan
+        return Colors.app.primary; // Cyan
       case 'REGISTRATION_CLOSED':
         return '#FFD700'; // Gold
       case 'IN_PROGRESS':
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,

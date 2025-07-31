@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
     borderWidth: 2,
-    borderColor: '#00E6FF',
+    borderColor: Colors.app.primary,
   },
   infoBlock: {
     flex: 1,
@@ -219,12 +220,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   info: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontSize: 12,
     fontWeight: '500',
   },
   primaryButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 16,
     paddingHorizontal: 22,
     paddingVertical: 8,

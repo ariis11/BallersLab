@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { Tournament } from '@/types/tournament';
 import { handleTournamentAction } from '@/utils/tournamentActions';
@@ -95,7 +96,7 @@ const MyTournamentsScreen = () => {
           style={styles.createButton}
           onPress={() => setShowCreateModal(true)}
         >
-          <MaterialCommunityIcons name="plus" size={20} color="#00E6FF" />
+          <MaterialCommunityIcons name="plus" size={20} color={Colors.app.primary} />
           <Text style={styles.createButtonText}>Create</Text>
         </TouchableOpacity>
       </View>
@@ -125,7 +126,7 @@ const MyTournamentsScreen = () => {
 
       {/* Tournament List */}
       {loading ? (
-        <ActivityIndicator size="large" color="#00E6FF" style={{ marginTop: 32 }} />
+        <ActivityIndicator size="large" color={Colors.app.primary} style={{ marginTop: 32 }} />
       ) : (
         <FlatList
           data={tournaments}
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   createButtonText: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontWeight: 'bold',
     fontSize: 14,
     marginLeft: 8,
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#181F33',
   },
   categoryButtonActive: {
-    backgroundColor: '#00E6FB',
+    backgroundColor: Colors.app.primary,
   },
   categoryText: { color: 'white', fontWeight: '500' },
   categoryTextActive: { color: '#181F33' },
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
     borderWidth: 2,
-    borderColor: '#00E6FF',
+    borderColor: Colors.app.primary,
   },
   infoBlockV2: {
     flex: 1,
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   viewBracketButtonV2: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   nextMatchV2: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontSize: 13,
     fontWeight: '500',
     marginTop: 2,
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: 'white', fontSize: 16, fontWeight: '600' },
   cardAction: {},
   actionBtn: {
-    backgroundColor: '#00E6FB',
+    backgroundColor: Colors.app.primary,
     color: '#181F33',
     borderRadius: 12,
     paddingHorizontal: 12,

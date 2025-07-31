@@ -219,7 +219,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
                 onPress={() => setShowMapPicker(true)}
                 activeOpacity={0.8}
               >
-                <MaterialCommunityIcons name="map-marker" size={20} color="#00E6FF" />
+                <MaterialCommunityIcons name="map-marker" size={20} color={Colors.app.primary} />
                 <Text style={styles.locationButtonText}>
                   {tournamentForm.latitude && tournamentForm.longitude
                     ? `Location (${tournamentForm.latitude.toFixed(4)}, ${tournamentForm.longitude.toFixed(4)})`

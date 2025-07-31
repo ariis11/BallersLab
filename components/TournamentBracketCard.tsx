@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -111,7 +112,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
             {/* Submission icon for running matches (not bye matches) */}
             {isRunning && match.player1 && (
               player1HasSubmitted ? (
-                <MaterialCommunityIcons name="check-circle" size={16} color="#00E6FF" style={styles.icon} />
+                <MaterialCommunityIcons name="check-circle" size={16} color={Colors.app.primary} style={styles.icon} />
               ) : (
                 <MaterialCommunityIcons name="clock-outline" size={16} color="#A0A4B8" style={styles.icon} />
               )
@@ -137,7 +138,7 @@ const TournamentBracketCard: React.FC<TournamentBracketCardProps> = ({ match, on
             </Text>
             {isRunning && match.player2 && (
               player2HasSubmitted ? (
-                <MaterialCommunityIcons name="check-circle" size={16} color="#00E6FF" style={styles.icon} />
+                <MaterialCommunityIcons name="check-circle" size={16} color={Colors.app.primary} style={styles.icon} />
               ) : (
                 <MaterialCommunityIcons name="clock-outline" size={16} color="#A0A4B8" style={styles.icon} />
               )
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   winnerText: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
   },
   byeText: {
     color: '#A0A4B8',
@@ -307,7 +308,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   submitScoreButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',

@@ -1,4 +1,5 @@
 // app/auth/register.tsx
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   registerButton: {
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signInText: {
-    color: '#00E6FF',
+    color: Colors.app.primary,
     fontSize: 14,
     fontWeight: 'bold',
   },

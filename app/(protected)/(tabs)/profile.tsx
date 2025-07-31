@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
@@ -61,7 +62,7 @@ export default function ProfileScreen() {
   if (userLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00E6FF" />
+        <ActivityIndicator size="large" color={Colors.app.primary} />
       </View>
     );
   }
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 5,
-    backgroundColor: '#00E6FF',
+    backgroundColor: Colors.app.primary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
