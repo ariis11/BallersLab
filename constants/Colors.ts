@@ -25,7 +25,7 @@ export const Colors = {
   },
   // App-specific design system colors
   app: {
-    primary: '#c44800',
+    primary: '#FF6B00',
     primaryDark: '#101426',
     background: '#0A1121',
     surface: '#181F33',

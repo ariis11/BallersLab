@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const apiBaseUrl = getApiBaseUrl();
 
   useEffect(() => {
     // On mount, try to load user from storage
@@ -31,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
         try {
-          const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/me`, {
+          const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
@@ -53,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async ({ email, password }: { email: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`${apiBaseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -72,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
-        await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/logout`, {
+        await fetch(`${apiBaseUrl}/api/auth/logout`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -86,7 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async ({ email, password }: { email: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/register`, {
+      const res = await fetch(`${apiBaseUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -105,7 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshUser = async () => {
     const token = await AsyncStorage.getItem('authToken');
     if (token) {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/me`, {
+      const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

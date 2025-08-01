@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CustomDateTimePicker from '../../components/ui/DateTimePicker';
+import { getApiBaseUrl } from '../../config/constants';
 import { useAuth } from '../../hooks/useAuth';
 
 const ProfileCreationScreen = () => {
@@ -55,7 +56,8 @@ const ProfileCreationScreen = () => {
         city: form.city,
       };
       
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/auth/complete-profile`, {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/auth/complete-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

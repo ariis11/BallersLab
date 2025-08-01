@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { Tournament } from '@/types/tournament';
@@ -19,7 +20,7 @@ const CATEGORIES = [
 
 type CategoryKey = 'upcoming' | 'active' | 'finished' | 'created';
 
-const API_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/my-tournaments`;
+const API_URL = `${getApiBaseUrl()}/api/tournaments/my-tournaments`;
 
 const MyTournamentsScreen = () => {
   const { user } = useAuth();

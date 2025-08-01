@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useTournamentFilters } from '@/hooks/useTournamentFilters';
@@ -74,7 +75,8 @@ export default function TournamentsScreen() {
     }
     
     try {
-      let url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/list?`;
+      const apiBaseUrl = getApiBaseUrl();
+      let url = `${apiBaseUrl}/api/tournaments/list?`;
       const params: Record<string, string> = {
         page: String(page),
         limit: String(TOURNAMENTS_PER_PAGE)

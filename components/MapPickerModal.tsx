@@ -38,8 +38,6 @@ const MapPickerModal: React.FC<MapPickerModalProps> = ({
   // Another useEffect to set marker + camera when map is ready
   useEffect(() => {
     if (visible && isMapReady) {
-        console.log('value', value);
-        console.log('userLocation', userLocation);
       if (value) {
         // User provided value
         setSelectedLocation(value);

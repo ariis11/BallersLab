@@ -2,6 +2,7 @@ import CustomDateTimePicker from '@/components/ui/DateTimePicker';
 import DropdownSelect from '@/components/ui/DropdownSelect';
 import FormInput from '@/components/ui/FormInput';
 import ToggleSwitch from '@/components/ui/ToggleSwitch';
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { AGE_GROUPS, CreateTournamentModalProps, TournamentFormData } from '@/types/tournament';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -125,10 +126,11 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
 
     try {
       const authToken = await AsyncStorage.getItem('authToken');
+      const apiBaseUrl = getApiBaseUrl();
       
       const endpoint = mode === 'edit' 
-        ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/update/${tournamentId}`
-        : `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/create`;
+        ? `${apiBaseUrl}/api/tournaments/update/${tournamentId}`
+        : `${apiBaseUrl}/api/tournaments/create`;
       
       const method = mode === 'edit' ? 'PUT' : 'POST';
       

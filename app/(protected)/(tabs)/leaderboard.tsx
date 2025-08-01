@@ -1,18 +1,19 @@
 import AgeGroupSelector from '@/components/ui/AgeGroupSelector';
 import LeaderboardItem from '@/components/ui/LeaderboardItem';
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import { LeaderboardResponse, LeaderboardUser } from '@/types/leaderboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,8 +33,9 @@ export default function LeaderboardScreen() {
       if (!isRefresh) setLoading(true);
 
       const token = await AsyncStorage.getItem('authToken');
+      const apiBaseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/leaderboard?ageGroup=${ageGroup}&page=1&size=50`,
+        `${apiBaseUrl}/api/leaderboard?ageGroup=${ageGroup}&page=1&size=50`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

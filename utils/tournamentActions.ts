@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface TournamentActionParams {
@@ -14,7 +15,7 @@ export const handleTournamentAction = async ({
   onEdit
 }: TournamentActionParams): Promise<void> => {
   const token = await AsyncStorage.getItem('authToken');
-  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  const baseUrl = getApiBaseUrl();
 
   switch (action) {
     case 'join':

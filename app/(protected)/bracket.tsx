@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,7 +25,8 @@ export default function BracketScreen() {
       setError(null);
       
       const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/brackets/bracket/${tournamentId}`, {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/brackets/bracket/${tournamentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -48,7 +50,8 @@ export default function BracketScreen() {
   const handleScoreSubmit = async (matchId: string, score1: number, score2: number) => {
     try {
       const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/brackets/submit-score/${tournamentId}/${matchId}`, {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/brackets/submit-score/${tournamentId}/${matchId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

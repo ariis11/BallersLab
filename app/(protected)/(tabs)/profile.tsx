@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/hooks/useAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,8 +30,9 @@ export default function ProfileScreen() {
     try {
       setLoadingPoints(true);
       const token = await AsyncStorage.getItem('authToken');
+      const apiBaseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/leaderboard/user-points`,
+        `${apiBaseUrl}/api/leaderboard/user-points`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

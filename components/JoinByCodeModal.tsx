@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '@/config/constants';
 import { Colors } from '@/constants/Colors';
 import React, { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -21,8 +22,9 @@ const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({ visible, onClose, onJ
     setJoiningTournament(true);
     try {
       const token = await (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
+      const apiBaseUrl = getApiBaseUrl();
       
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/tournaments/join-by-code`, {
+      const response = await fetch(`${apiBaseUrl}/api/tournaments/join-by-code`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

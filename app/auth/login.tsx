@@ -86,7 +86,6 @@ export default function LoginScreen() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
-        
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontFamily: 'SpaceMono',
-    fontSize: 32,
+    fontSize: 6,
     color: '#E6F6FF',
     fontWeight: 'bold',
     letterSpacing: 1.5,
